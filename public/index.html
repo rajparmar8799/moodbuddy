@@ -396,10 +396,14 @@
                     <div class="profile-container">
                         <div class="profile-card">
                             <div class="profile-avatar-section">
-                                <div class="profile-avatar-large">
+                                <div class="profile-avatar-large" id="profile-avatar-display">
                                     <i class="fas fa-user"></i>
                                 </div>
-                                <button class="btn-secondary">Change Avatar</button>
+                                <div class="avatar-upload-section">
+                                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                                    <button class="btn-secondary" id="change-avatar-btn">Change Avatar</button>
+                                    <button class="btn-secondary" id="remove-avatar-btn" style="display: none;">Remove Avatar</button>
+                                </div>
                             </div>
 
                             <div class="profile-info">

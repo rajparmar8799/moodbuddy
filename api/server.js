@@ -349,114 +349,258 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 }) : null;
 
+// Pre-defined suggestions database
+const suggestionsDatabase = {
+  '😢': [
+    "Take a warm shower and let the water wash away your worries for a few minutes.",
+    "Listen to your favorite sad song and let yourself feel the emotions - it's okay to cry.",
+    "Call a close friend and talk about what's bothering you - sharing helps lighten the load.",
+    "Write down three things you're grateful for, even on tough days.",
+    "Take a 10-minute walk outside and focus on the sensation of your feet on the ground.",
+    "Drink a cup of your favorite warm beverage and savor each sip mindfully.",
+    "Look at old photos that make you smile and remember happier times.",
+    "Do one small act of self-care, like putting on comfortable clothes or brushing your hair.",
+    "Write a letter to yourself about how strong you've been through past challenges.",
+    "Watch a funny video or movie that always makes you laugh, even if it's just for 5 minutes.",
+    "Practice deep breathing: inhale for 4 counts, hold for 4, exhale for 4.",
+    "Make a list of small things you can do tomorrow that might bring some joy.",
+    "Hug a stuffed animal or pet if you have one - physical touch can be comforting.",
+    "Light a scented candle and focus on the pleasant aroma.",
+    "Read an inspirational quote or story about overcoming sadness.",
+    "Take a break from social media and do something offline that you enjoy.",
+    "Make yourself a comfort food that reminds you of happier times.",
+    "Write down your feelings in a journal without judging yourself.",
+    "Listen to nature sounds or calming music for 10 minutes.",
+    "Remind yourself that this feeling is temporary and you've gotten through tough times before."
+  ],
+  '😟': [
+    "Take 5 deep breaths and focus on the present moment.",
+    "Write down your worries on paper, then tear it up or throw it away.",
+    "Do a quick 5-minute meditation focusing on what you're grateful for.",
+    "Go for a short walk and notice the world around you.",
+    "Call someone you trust and talk through what's worrying you.",
+    "Make a list of things you can control and things you can't.",
+    "Practice progressive muscle relaxation - tense and release each muscle group.",
+    "Listen to calming music or nature sounds.",
+    "Do something creative like drawing or coloring for 10 minutes.",
+    "Remind yourself of past worries that turned out okay.",
+    "Drink a glass of water and eat something nourishing.",
+    "Take a break from news or social media for a while.",
+    "Do some light stretching or yoga poses.",
+    "Write down three positive affirmations about yourself.",
+    "Spend time with a pet or loved one.",
+    "Clean or organize a small space to create a sense of control.",
+    "Watch a funny video to shift your perspective.",
+    "Practice mindfulness by eating a small treat very slowly.",
+    "Take a warm bath or shower.",
+    "Read an inspiring book or article."
+  ],
+  '😐': [
+    "Try something new today, even if it's small like a different route to work.",
+    "Connect with someone you haven't talked to in a while.",
+    "Do a random act of kindness for someone else.",
+    "Learn something new - watch a short educational video.",
+    "Get outside and spend time in nature.",
+    "Try a new recipe or cook something you've never made.",
+    "Organize a small area of your home or workspace.",
+    "Listen to music that energizes you.",
+    "Do some light exercise like dancing in your room.",
+    "Write down goals for the week ahead.",
+    "Try a new hobby or revisit an old one.",
+    "Spend time with friends or family.",
+    "Read a book or article that interests you.",
+    "Take photos of things that make you happy.",
+    "Practice a skill you've been wanting to learn.",
+    "Volunteer or help someone in need.",
+    "Create something with your hands.",
+    "Explore a new place in your city.",
+    "Try meditation or mindfulness exercises.",
+    "Plan something fun for the weekend."
+  ],
+  '😊': [
+    "Share your good mood with someone else - tell a friend what made you happy.",
+    "Do something kind for someone today.",
+    "Take a moment to appreciate the good things in your life.",
+    "Try to make someone else smile today.",
+    "Celebrate your positive mood by doing something you enjoy.",
+    "Write down what went well today.",
+    "Share your happiness on social media or with loved ones.",
+    "Do something creative that brings you joy.",
+    "Spend time outdoors enjoying the day.",
+    "Listen to upbeat music and dance around.",
+    "Treat yourself to something small but special.",
+    "Call a friend just to say hello and share your good mood.",
+    "Do a random act of kindness.",
+    "Take time to really enjoy a meal or snack.",
+    "Practice gratitude by thanking someone in your life.",
+    "Share a positive memory with someone.",
+    "Do something that makes you laugh.",
+    "Celebrate small wins and achievements.",
+    "Spend time with people who make you happy.",
+    "Create or maintain a positive habit."
+  ],
+  '😁': [
+    "Share your joy with others - your positive energy is contagious!",
+    "Celebrate this great mood by doing something fun and spontaneous.",
+    "Use this energy to tackle something you've been putting off.",
+    "Spread positivity by complimenting three people today.",
+    "Do something adventurous or try something new.",
+    "Share your happiness through laughter with friends or family.",
+    "Use this great mood to help someone who needs cheering up.",
+    "Create something beautiful or meaningful.",
+    "Dance, sing, or express yourself creatively.",
+    "Plan something exciting for the future.",
+    "Share your enthusiasm with colleagues or classmates.",
+    "Do something generous for someone else.",
+    "Celebrate your good mood with your favorite treat.",
+    "Use this energy to organize or clean something.",
+    "Share funny stories or jokes with others.",
+    "Do something physical and active.",
+    "Create positive memories with loved ones.",
+    "Try a new experience or adventure.",
+    "Express gratitude for this wonderful feeling.",
+    "Use your good mood to inspire others around you."
+  ]
+};
+
 app.post('/api/suggestions', async (req, res) => {
-  try {
-    const { userId, recentMoods } = req.body;
+   try {
+     const { userId, recentMoods } = req.body;
 
-    if (!userId || !recentMoods) {
-      return res.status(400).json({ error: 'User ID and recent moods are required' });
-    }
+     if (!userId || !recentMoods || recentMoods.length === 0) {
+       return res.status(400).json({ error: 'User ID and recent moods are required' });
+     }
 
-    // Try OpenAI API only
-    if (openai) {
-      try {
-        const prompt = `Based on these recent mood entries: ${recentMoods.join(', ')}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
+     // Get the most recent mood
+     const currentMood = recentMoods[recentMoods.length - 1];
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: "system",
-              content: "You are MoodBuddy, a professional emotional support AI. Always reply politely, in a comforting and empathetic tone, limited to 4 lines. Respond like a human counselor trained in positive psychology."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          max_tokens: 300,
-          temperature: 0.8
-        });
+     // Get suggestions for the current mood
+     const moodSuggestions = suggestionsDatabase[currentMood] || suggestionsDatabase['😐'];
 
-        const text = completion.choices[0].message.content;
-        console.log('OpenAI API response received');
+     // Randomly select 3 suggestions
+     const shuffled = [...moodSuggestions].sort(() => 0.5 - Math.random());
+     const selectedSuggestions = shuffled.slice(0, 3);
 
-        // Parse suggestions from response
-        const suggestions = text
-          .split('\n')
-          .filter(line => line.trim() && (line.match(/^\d+\./) || line.match(/^[•\-*]/)))
-          .slice(0, 3)
-          .map(s => s.replace(/^\d+\.\s*/, '').replace(/^[•\-*]\s*/, '').trim());
+     console.log(`Returning ${selectedSuggestions.length} suggestions for mood: ${currentMood}`);
+     return res.json({ suggestions: selectedSuggestions });
 
-        if (suggestions.length > 0) {
-          console.log('Returning OpenAI suggestions');
-          return res.json({ suggestions });
-        }
-      } catch (openaiError) {
-        console.log('OpenAI API failed for suggestions:', openaiError.message);
-        console.log('Full error:', openaiError);
-      }
-    }
-
-    // Return error if AI fails
-    console.log('AI API failed, returning error');
-    return res.status(500).json({ error: 'AI service temporarily unavailable. Please try again later.' });
-  } catch (error) {
-    console.error('AI suggestions error:', error.message);
-    return res.status(500).json({ error: 'AI service temporarily unavailable. Please try again later.' });
-  }
+   } catch (error) {
+     console.error('Suggestions error:', error.message);
+     return res.status(500).json({ error: 'Failed to get suggestions. Please try again.' });
+   }
 });
+
+// Pre-defined chat responses database
+const chatResponses = {
+  greeting: [
+    "Hello! I'm here to listen and support you. How are you feeling today?",
+    "Hi there! I'm your Mood Buddy. What's on your mind today?",
+    "Hello! I'm glad you reached out. I'm here to listen without judgment.",
+    "Hi! I'm here for you. What's been going on lately?",
+    "Hello! Thank you for trusting me with your thoughts. How can I support you today?"
+  ],
+  sad: [
+    "I'm sorry you're feeling this way. It's completely okay to feel sad sometimes. You're not alone in this.",
+    "I hear that you're feeling down, and that's valid. Sometimes we all need to acknowledge our sadness before we can move forward.",
+    "It's brave of you to share how you're feeling. Sadness is a normal emotion, and it's okay to experience it.",
+    "I'm here with you during this difficult time. Your feelings matter, and it's important to give yourself permission to feel them.",
+    "Thank you for being honest about your sadness. Remember that this feeling won't last forever, and brighter days are ahead."
+  ],
+  anxious: [
+    "Anxiety can be really overwhelming. Let's take a moment to breathe together. Try inhaling for 4 counts, holding for 4, and exhaling for 4.",
+    "I understand anxiety can make everything feel uncertain. You're doing the right thing by reaching out. What specifically is worrying you right now?",
+    "Anxiety is tough, but you're stronger than you realize. Let's focus on what you can control in this moment.",
+    "It's okay to feel anxious. Many people experience this. What usually helps you feel more grounded?",
+    "Thank you for sharing your anxiety with me. Remember that your feelings are valid, and you're taking positive steps by addressing them."
+  ],
+  happy: [
+    "I'm so glad to hear you're feeling happy! That's wonderful. What brought this good mood?",
+    "Your happiness is contagious! It's great to hear positive updates. What's been going well for you?",
+    "I'm delighted you're feeling good! Celebrating these moments is important. What would you like to do to make this day even better?",
+    "That's fantastic! Happiness is meant to be shared. Is there someone you'd like to share this joy with?",
+    "I'm smiling just hearing about your good mood! What's one thing that always brings you happiness?"
+  ],
+  neutral: [
+    "Sometimes feeling neutral is just what we need. How has your day been going so far?",
+    "It's okay to have days where we feel neither here nor there. What's been on your mind lately?",
+    "Neutral days can be a good opportunity for reflection. Is there anything you'd like to talk about?",
+    "Every emotion has its place, including feeling neutral. How are you taking care of yourself today?",
+    "Thank you for checking in. Sometimes just acknowledging how we feel is an important step."
+  ],
+  stressed: [
+    "Stress can be really challenging. What aspects of your life are feeling most stressful right now?",
+    "I understand stress can make everything feel overwhelming. What usually helps you manage stress?",
+    "You're doing great by recognizing your stress and reaching out. What would help you feel more in control?",
+    "Stress is a signal that something needs attention. What boundaries can you set to protect your well-being?",
+    "Thank you for sharing your stress with me. Remember to be gentle with yourself during challenging times."
+  ],
+  grateful: [
+    "Gratitude is such a powerful emotion! What are you feeling grateful for today?",
+    "I'm glad you're experiencing gratitude. Focusing on positive aspects can really shift our perspective.",
+    "That's beautiful! Gratitude helps us appreciate the good things in life. What's one thing you're especially thankful for?",
+    "Gratitude is contagious! Sharing what you're thankful for can brighten someone's day.",
+    "I'm happy to hear you're feeling grateful. What small joys have you noticed recently?"
+  ],
+  general: [
+    "I'm here to listen. What's been on your mind lately?",
+    "Thank you for sharing that with me. How else can I support you?",
+    "I appreciate you opening up. Your feelings are important and valid.",
+    "I'm listening without judgment. Please continue if you'd like.",
+    "Your thoughts and feelings matter. I'm here for you.",
+    "It's brave of you to share your thoughts. How are you feeling about that?",
+    "I hear you, and I want to acknowledge how you're feeling right now.",
+    "Thank you for trusting me with your thoughts. I'm here to support you.",
+    "Your emotions are valid, and it's important to express them.",
+    "I'm glad you reached out. Sometimes just talking about things helps."
+  ]
+};
+
+// Function to analyze message and determine response type
+function analyzeMessage(message) {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+    return 'greeting';
+  } else if (lowerMessage.includes('sad') || lowerMessage.includes('depressed') || lowerMessage.includes('down') || lowerMessage.includes('cry')) {
+    return 'sad';
+  } else if (lowerMessage.includes('anxious') || lowerMessage.includes('worried') || lowerMessage.includes('nervous') || lowerMessage.includes('scared')) {
+    return 'anxious';
+  } else if (lowerMessage.includes('happy') || lowerMessage.includes('good') || lowerMessage.includes('great') || lowerMessage.includes('excited')) {
+    return 'happy';
+  } else if (lowerMessage.includes('stressed') || lowerMessage.includes('overwhelmed') || lowerMessage.includes('busy') || lowerMessage.includes('pressure')) {
+    return 'stressed';
+  } else if (lowerMessage.includes('grateful') || lowerMessage.includes('thankful') || lowerMessage.includes('thanks') || lowerMessage.includes('appreciate')) {
+    return 'grateful';
+  } else {
+    return 'general';
+  }
+}
 
 // AI Chat/Assistant endpoint
 app.post('/api/chat', async (req, res) => {
-  try {
-    const { userId, message } = req.body;
+   try {
+     const { userId, message } = req.body;
 
-    if (!userId || !message) {
-      return res.status(400).json({ error: 'User ID and message are required' });
-    }
+     if (!userId || !message) {
+       return res.status(400).json({ error: 'User ID and message are required' });
+     }
 
-    // Try OpenAI API only
-    if (openai) {
-      try {
-        // Create comforting prompt by appending the comfort instruction
-        const comfortingPrompt = `${message} try to make me comfortable and send appropriate answer to boost my self`;
+     // Analyze the message to determine response type
+     const responseType = analyzeMessage(message);
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: "system",
-              content: "You are MoodBuddy, a professional emotional support AI. Always reply politely, in a comforting and empathetic tone, limited to 4 lines. Respond like a human counselor trained in positive psychology."
-            },
-            {
-              role: "user",
-              content: comfortingPrompt
-            }
-          ],
-          max_tokens: 300,
-          temperature: 0.8
-        });
+     // Get appropriate responses for the detected emotion/type
+     const responses = chatResponses[responseType] || chatResponses['general'];
 
-        const aiResponse = completion.choices[0].message.content.trim();
-        console.log('OpenAI API chat response received');
-        return res.json({ response: aiResponse });
-      } catch (openaiError) {
-        console.log('OpenAI API failed for chat:', openaiError.message);
-        console.log('Full error:', openaiError);
-      }
-    }
+     // Select a random response
+     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
 
-    // Return error if AI fails
-    console.log('AI API failed for chat, returning error');
-    return res.status(500).json({ error: 'AI service temporarily unavailable. Please try again later.' });
-  } catch (error) {
-    console.error('AI chat error:', error.message);
+     console.log(`Chat response for ${responseType}: ${randomResponse.substring(0, 50)}...`);
+     return res.json({ response: randomResponse });
 
-    // Return error if AI fails
-    console.log('AI API failed for chat, returning error');
-    return res.status(500).json({ error: 'AI service temporarily unavailable. Please try again later.' });
-  }
+   } catch (error) {
+     console.error('Chat error:', error.message);
+     return res.status(500).json({ error: 'I\'m experiencing some technical difficulties, but I\'m still here for you. Please try again in a moment.' });
+   }
 });
 
 // Vercel serverless function handler

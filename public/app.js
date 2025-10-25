@@ -60,6 +60,9 @@ class MoodBuddyApp {
         document.getElementById('view-profile-btn').addEventListener('click', () => this.viewProfile());
         document.getElementById('dropdown-logout-btn').addEventListener('click', () => this.logout());
 
+        // Avatar upload
+        this.initAvatarUpload();
+
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             const profileBtn = document.getElementById('user-profile-btn');
@@ -154,6 +157,15 @@ class MoodBuddyApp {
         // Update user profile in top nav
         if (this.currentUser) {
             document.getElementById('user-display-name').textContent = this.currentUser.username;
+
+            // Update top nav avatar
+            const topNavAvatar = document.querySelector('.user-avatar');
+            const savedAvatar = localStorage.getItem(`avatar_${this.currentUser.id}`);
+            if (savedAvatar) {
+                topNavAvatar.innerHTML = `<img src="${savedAvatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            } else {
+                topNavAvatar.innerHTML = '<i class="fas fa-user"></i>';
+            }
         }
     }
 
@@ -479,8 +491,103 @@ class MoodBuddyApp {
             document.getElementById('profile-joined').textContent = this.currentUser.created_at ?
                 new Date(this.currentUser.created_at).toLocaleDateString() : 'N/A';
 
+            // Load saved avatar
+            this.loadSavedAvatar();
+
             // Load additional stats
             this.loadProfileStats();
+        }
+    }
+
+    loadSavedAvatar() {
+        const savedAvatar = localStorage.getItem(`avatar_${this.currentUser.id}`);
+        const avatarDisplay = document.getElementById('profile-avatar-display');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+
+        if (savedAvatar) {
+            avatarDisplay.innerHTML = `<img src="${savedAvatar}" alt="Profile Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+            removeBtn.style.display = 'inline-block';
+        } else {
+            avatarDisplay.innerHTML = '<i class="fas fa-user"></i>';
+            removeBtn.style.display = 'none';
+        }
+    }
+
+    initAvatarUpload() {
+        const changeBtn = document.getElementById('change-avatar-btn');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+        const fileInput = document.getElementById('avatar-upload');
+
+        changeBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        removeBtn.addEventListener('click', () => {
+            if (this.currentUser) {
+                localStorage.removeItem(`avatar_${this.currentUser.id}`);
+                this.loadSavedAvatar();
+                this.showToast('Avatar removed successfully', 'success');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.processAvatarUpload(file);
+            }
+        });
+    }
+
+    async processAvatarUpload(file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            this.showToast('Please select a valid image file', 'error');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            this.showToast('Image size must be less than 5MB', 'error');
+            return;
+        }
+
+        try {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Create canvas for resizing
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Set canvas size (square, max 200px)
+                    const size = Math.min(200, Math.min(img.width, img.height));
+                    canvas.width = size;
+                    canvas.height = size;
+
+                    // Calculate crop area (center square)
+                    const sourceX = (img.width - size) / 2;
+                    const sourceY = (img.height - size) / 2;
+
+                    // Draw and crop image
+                    ctx.drawImage(img, sourceX, sourceY, size, size, 0, 0, size, size);
+
+                    // Convert to base64
+                    const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+
+                    // Save to localStorage
+                    if (this.currentUser) {
+                        localStorage.setItem(`avatar_${this.currentUser.id}`, resizedImage);
+                        this.loadSavedAvatar();
+                        this.showToast('Avatar updated successfully', 'success');
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            this.showToast('Failed to upload avatar', 'error');
         }
     }
 
