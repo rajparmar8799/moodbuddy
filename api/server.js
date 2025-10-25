@@ -447,7 +447,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Vercel serverless function handler
-export default app;
+module.exports = app;
 
 // For local development
 if (require.main === module) {
