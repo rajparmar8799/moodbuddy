@@ -459,3 +459,8 @@ if (process.env.VERCEL) {
     await initializeSupabaseTables();
   });
 }
+
+// Handle Vercel serverless function
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = app;
+}
