@@ -510,7 +510,7 @@ app.post('/api/suggestions', async (req, res) => {
          }
 
          const currentMood = recentMoods[recentMoods.length - 1];
-         const prompt = `${moodContext}Based on this recent mood: ${currentMood}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
+         const prompt = `${moodContext}Hey friend! Based on your recent mood ${currentMood}, here are 3 simple, friendly suggestions to help you feel better. Keep each one short and conversational, like advice from a good friend. Format as a numbered list.`;
 
          console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
 
@@ -671,7 +671,7 @@ app.post('/api/chat', async (req, res) => {
            contextInfo = `The user has recently logged these moods: ${recentMoods}. `;
          }
 
-         const prompt = `${contextInfo}${message} Please respond as a supportive, empathetic AI assistant focused on mental health and emotional well-being. Keep your response under 150 words and be encouraging and understanding.`;
+         const prompt = `${contextInfo}Hey friend! ${message} Respond like a caring, understanding friend would - keep it real, supportive, and conversational. Keep your response to 2-3 lines only, unless you really need to express something important. Be genuine and warm.`;
 
          console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
 
