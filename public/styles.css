@@ -57,6 +57,45 @@ body.dark-mode {
     --shadow-lg: var(--dark-shadow);
 }
 
+/* Force dark mode styles to override */
+body.dark-mode .auth-container,
+body.dark-mode .sidebar,
+body.dark-mode .top-nav,
+body.dark-mode .main-content,
+body.dark-mode .stat-card,
+body.dark-mode .chart-container,
+body.dark-mode .recent-moods,
+body.dark-mode .mood-selector .mood-option,
+body.dark-mode .suggestion-card,
+body.dark-mode .chat-container,
+body.dark-mode .profile-card,
+body.dark-mode .toast {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--bg-tertiary) !important;
+}
+
+body.dark-mode .auth-tabs .tab.active,
+body.dark-mode .nav-link.active,
+body.dark-mode .mood-option.selected {
+    background: var(--bg-secondary) !important;
+    color: var(--primary-color) !important;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .note-section textarea,
+body.dark-mode #chat-input {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--bg-tertiary) !important;
+}
+
+body.dark-mode .form-group input:focus,
+body.dark-mode .note-section textarea:focus,
+body.dark-mode #chat-input:focus {
+    border-color: var(--primary-color) !important;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-gradient);

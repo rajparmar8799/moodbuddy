@@ -213,19 +213,46 @@ class MoodBuddyApp {
     }
 
     switchPage(page) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        console.log(`📄 Switching to page: ${page}`);
+
+        // Hide all pages first
+        document.querySelectorAll('.page').forEach(p => {
+            p.classList.remove('active');
+            p.style.display = 'none';
+        });
+
+        // Remove active state from all nav links
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
-        document.getElementById(`${page}-page`).classList.add('active');
-        document.querySelector(`[data-page="${page}"]`).classList.add('active');
+        // Show the target page
+        const targetPage = document.getElementById(`${page}-page`);
+        if (targetPage) {
+            targetPage.classList.add('active');
+            targetPage.style.display = 'block';
+            console.log(`✅ Page ${page} activated`);
+        } else {
+            console.log(`❌ Page ${page} not found`);
+        }
+
+        // Activate the corresponding nav link
+        const targetLink = document.querySelector(`[data-page="${page}"]`);
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
 
         this.currentPage = page;
 
+        // Load page-specific data
         if (page === 'dashboard') {
             this.loadDashboard();
         } else if (page === 'suggestions') {
             this.getSuggestions();
+        } else if (page === 'profile') {
+            this.viewProfile();
         }
+
+        // Update mobile sidebar state
+        this.updateMobileSidebar();
     }
 
     async loadDashboard() {
@@ -611,11 +638,15 @@ class MoodBuddyApp {
     }
 
     viewProfile() {
+        console.log('👤 Viewing profile for user:', this.currentUser?.id);
+
         this.switchPage('profile');
         document.getElementById('profile-dropdown').classList.remove('show');
 
         // Load profile data
         if (this.currentUser) {
+            console.log('📊 Loading profile data...');
+
             // Show real user data immediately
             document.getElementById('profile-username').textContent = this.currentUser.username;
             document.getElementById('profile-email').textContent = this.currentUser.email;
@@ -627,6 +658,10 @@ class MoodBuddyApp {
 
             // Load additional stats
             this.loadProfileStats();
+
+            console.log('✅ Profile data loaded');
+        } else {
+            console.log('❌ No current user for profile');
         }
     }
 
@@ -849,21 +884,40 @@ class MoodBuddyApp {
     }
 
     async loadProfileStats() {
-        if (!this.currentUser) return;
+        console.log('📈 Loading profile stats for user:', this.currentUser?.id);
+
+        if (!this.currentUser) {
+            console.log('❌ No current user for stats');
+            return;
+        }
 
         try {
+            console.log('📡 Fetching profile stats...');
             const response = await fetch(`/api/dashboard/${this.currentUser.id}`);
+            console.log('📡 Profile stats response status:', response.status);
+
             const data = await response.json();
+            console.log('📡 Profile stats data:', data);
 
             if (response.ok) {
+                console.log('✅ Profile stats loaded successfully');
                 document.getElementById('profile-entries').textContent = data.totalEntries || 0;
                 document.getElementById('profile-streak').textContent = `${data.currentStreak || 0} days`;
+
+                // Update average mood if element exists
+                const avgMoodElement = document.getElementById('profile-avg-mood');
+                if (avgMoodElement) {
+                    avgMoodElement.textContent = data.averageMood || '0.0';
+                }
             } else {
+                console.log('❌ Profile stats load failed:', data.error);
+                this.showToast('Failed to load profile statistics', 'error');
                 document.getElementById('profile-entries').textContent = '0';
                 document.getElementById('profile-streak').textContent = '0 days';
             }
         } catch (error) {
-            console.error('Failed to load profile stats:', error);
+            console.error('❌ Profile stats error:', error);
+            this.showToast('Network error loading profile stats', 'error');
             document.getElementById('profile-entries').textContent = '0';
             document.getElementById('profile-streak').textContent = '0 days';
         }
@@ -1082,16 +1136,23 @@ class MoodBuddyApp {
             return;
         }
 
+        // Force a reflow to ensure CSS variables are applied
+        body.offsetHeight;
+
         const currentTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
         console.log(`🎨 Switching from ${currentTheme} to ${newTheme}`);
 
+        // Remove current theme class first
+        body.classList.remove('dark-mode');
+
+        // Force another reflow
+        body.offsetHeight;
+
         // Apply the new theme
         if (newTheme === 'dark') {
             body.classList.add('dark-mode');
-        } else {
-            body.classList.remove('dark-mode');
         }
 
         // Save to localStorage

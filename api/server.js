@@ -489,8 +489,32 @@ app.post('/api/suggestions', async (req, res) => {
      if (openai) {
        try {
          console.log('🚀 Trying OpenAI for suggestions...');
+
+         // Get more context from user's mood history
+         const { data: userMoods, error: moodError } = await supabase
+           .from('moods')
+           .select('*')
+           .eq('user_id', userId)
+           .order('created_at', { ascending: false })
+           .limit(10);
+
+         let moodContext = '';
+         if (!moodError && userMoods && userMoods.length > 0) {
+           const moodCounts = {};
+           userMoods.forEach(mood => {
+             moodCounts[mood.mood] = (moodCounts[mood.mood] || 0) + 1;
+           });
+
+           const dominantMood = Object.entries(moodCounts)
+             .sort(([,a], [,b]) => b - a)[0][0];
+
+           moodContext = `This user has been experiencing ${dominantMood} frequently. `;
+         }
+
          const currentMood = recentMoods[recentMoods.length - 1];
-         const prompt = `Based on this recent mood: ${currentMood}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
+         const prompt = `${moodContext}Based on this recent mood: ${currentMood}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
+
+         console.log('📤 Sending to OpenAI:', prompt.substring(0, 100) + '...');
 
          const completion = await openai.chat.completions.create({
            model: 'gpt-3.5-turbo',
@@ -510,12 +534,15 @@ app.post('/api/suggestions', async (req, res) => {
            .map(s => s.replace(/^\d+\.\s*/, '').replace(/^[•\-*]\s*/, '').trim());
 
          if (suggestions.length > 0) {
-           console.log('✅ Returning OpenAI suggestions');
+           console.log('✅ Returning OpenAI suggestions:', suggestions);
            return res.json({ suggestions });
          }
        } catch (openaiError) {
          console.log('❌ OpenAI failed, using fallback:', openaiError.message);
+         console.log('❌ OpenAI error details:', openaiError);
        }
+     } else {
+       console.log('❌ OpenAI client not available');
      }
 
      // Fallback to database suggestions
@@ -532,6 +559,7 @@ app.post('/api/suggestions', async (req, res) => {
 
    } catch (error) {
      console.error('❌ Suggestions error:', error.message);
+     console.error('❌ Suggestions error stack:', error.stack);
      return res.status(500).json({ error: 'Failed to get suggestions. Please try again.' });
    }
 });
@@ -639,7 +667,24 @@ app.post('/api/chat', async (req, res) => {
      if (openai) {
        try {
          console.log('🚀 Trying OpenAI for chat...');
-         const prompt = `${message} Please respond as a supportive, empathetic AI assistant focused on mental health and emotional well-being. Keep your response under 150 words and be encouraging and understanding.`;
+
+         // Get user's recent mood context
+         const { data: userMoods, error: moodError } = await supabase
+           .from('moods')
+           .select('*')
+           .eq('user_id', userId)
+           .order('created_at', { ascending: false })
+           .limit(5);
+
+         let contextInfo = '';
+         if (!moodError && userMoods && userMoods.length > 0) {
+           const recentMoods = userMoods.slice(0, 3).map(m => m.mood).join(', ');
+           contextInfo = `The user has recently logged these moods: ${recentMoods}. `;
+         }
+
+         const prompt = `${contextInfo}${message} Please respond as a supportive, empathetic AI assistant focused on mental health and emotional well-being. Keep your response under 150 words and be encouraging and understanding.`;
+
+         console.log('📤 Sending to OpenAI:', prompt.substring(0, 100) + '...');
 
          const completion = await openai.chat.completions.create({
            model: 'gpt-3.5-turbo',
@@ -649,11 +694,14 @@ app.post('/api/chat', async (req, res) => {
          });
 
          const aiResponse = completion.choices[0].message.content.trim();
-         console.log('✅ OpenAI chat response received');
+         console.log('✅ OpenAI chat response received:', aiResponse.substring(0, 50) + '...');
          return res.json({ response: aiResponse });
        } catch (openaiError) {
-         console.log('❌ OpenAI chat failed, using fallback:', openaiError.message);
+         console.log('❌ OpenAI chat failed:', openaiError.message);
+         console.log('❌ OpenAI error details:', openaiError);
        }
+     } else {
+       console.log('❌ OpenAI client not available');
      }
 
      // Fallback to predefined responses
@@ -667,6 +715,7 @@ app.post('/api/chat', async (req, res) => {
 
    } catch (error) {
      console.error('❌ Chat error:', error.message);
+     console.error('❌ Chat error stack:', error.stack);
      return res.status(500).json({ error: 'I\'m experiencing some technical difficulties, but I\'m still here for you. Please try again in a moment.' });
    }
 });
