@@ -3,6 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const { createClient } = require('@supabase/supabase-js');
+const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
@@ -331,7 +332,6 @@ app.get('/api/dashboard/:userId', async (req, res) => {
 });
 
 // OpenAI client
-const OpenAI = require('openai');
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 }) : null;
@@ -446,11 +446,11 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// For Vercel deployment
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
-  // For local development
+// Export for Vercel serverless function
+module.exports = app;
+
+// For local development only
+if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Mood Buddy server running on http://localhost:${PORT}`);
     console.log(`Using Supabase storage`);
@@ -458,9 +458,4 @@ if (process.env.VERCEL) {
     // Initialize Supabase tables
     await initializeSupabaseTables();
   });
-}
-
-// Handle Vercel serverless function
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = app;
 }
