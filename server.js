@@ -8,12 +8,11 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Supabase client
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-  console.error('❌ Missing Supabase environment variables');
-  process.exit(1);
+// Supabase client - only initialize if environment variables are available
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 }
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 // Middleware
 app.use(cors());
@@ -257,7 +256,9 @@ app.get('/api/moods/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
       const { data: userMoods, error } = await supabase
         .from('moods')
         .select('*')
