@@ -93,55 +93,87 @@ class MoodBuddyApp {
 
     async handleLogin(e) {
         e.preventDefault();
+        console.log('🔐 Attempting login...');
+
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
+        if (!email || !password) {
+            this.showToast('Please fill in all fields', 'error');
+            return;
+        }
+
         try {
+            console.log('📡 Making login API call...');
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
 
+            console.log('📡 Login response status:', response.status);
             const data = await response.json();
+            console.log('📡 Login response data:', data);
 
             if (response.ok) {
+                console.log('✅ Login successful, setting user data');
                 this.currentUser = data.user;
                 localStorage.setItem('currentUser', JSON.stringify(data.user));
                 this.showMainApp();
                 this.showToast('Welcome back!', 'success');
                 this.loadDashboard();
+                console.log('✅ Login flow completed');
             } else {
-                this.showToast(data.error, 'error');
+                console.log('❌ Login failed:', data.error);
+                this.showToast(data.error || 'Login failed', 'error');
             }
         } catch (error) {
-            this.showToast('Login failed', 'error');
+            console.error('❌ Login error:', error);
+            this.showToast('Network error. Please try again.', 'error');
         }
     }
 
     async handleSignup(e) {
         e.preventDefault();
+        console.log('👤 Attempting signup...');
+
         const username = document.getElementById('signup-username').value;
         const email = document.getElementById('signup-email').value;
         const password = document.getElementById('signup-password').value;
 
+        if (!username || !email || !password) {
+            this.showToast('Please fill in all fields', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showToast('Password must be at least 6 characters', 'error');
+            return;
+        }
+
         try {
+            console.log('📡 Making signup API call...');
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, email, password })
             });
 
+            console.log('📡 Signup response status:', response.status);
             const data = await response.json();
+            console.log('📡 Signup response data:', data);
 
             if (response.ok) {
+                console.log('✅ Signup successful');
                 this.showToast('Account created successfully! Please login.', 'success');
                 this.switchAuthTab('login');
             } else {
-                this.showToast(data.error, 'error');
+                console.log('❌ Signup failed:', data.error);
+                this.showToast(data.error || 'Signup failed', 'error');
             }
         } catch (error) {
-            this.showToast('Signup failed', 'error');
+            console.error('❌ Signup error:', error);
+            this.showToast('Network error. Please try again.', 'error');
         }
     }
 
@@ -197,22 +229,37 @@ class MoodBuddyApp {
     }
 
     async loadDashboard() {
-        if (!this.currentUser) return;
+        console.log('📊 Loading dashboard for user:', this.currentUser?.id);
+
+        if (!this.currentUser) {
+            console.log('❌ No current user, skipping dashboard load');
+            return;
+        }
 
         try {
+            console.log('📡 Fetching dashboard data...');
             const response = await fetch(`/api/dashboard/${this.currentUser.id}`);
+            console.log('📡 Dashboard response status:', response.status);
+
             const data = await response.json();
+            console.log('📡 Dashboard response data:', data);
 
             if (response.ok) {
-                document.getElementById('total-entries').textContent = data.totalEntries;
-                document.getElementById('current-streak').textContent = data.currentStreak;
-                document.getElementById('average-mood').textContent = data.averageMood;
+                console.log('✅ Dashboard data loaded successfully');
+                document.getElementById('total-entries').textContent = data.totalEntries || 0;
+                document.getElementById('current-streak').textContent = data.currentStreak || 0;
+                document.getElementById('average-mood').textContent = data.averageMood || '0.0';
 
-                this.renderMoodChart(data.moodTrends);
+                this.renderMoodChart(data.moodTrends || {});
                 this.renderRecentMoods();
+                console.log('✅ Dashboard rendering completed');
+            } else {
+                console.log('❌ Dashboard load failed:', data.error);
+                this.showToast('Failed to load dashboard data', 'error');
             }
         } catch (error) {
-            console.error('Failed to load dashboard:', error);
+            console.error('❌ Dashboard load error:', error);
+            this.showToast('Network error loading dashboard', 'error');
         }
     }
 
@@ -261,26 +308,61 @@ class MoodBuddyApp {
     }
 
     async renderRecentMoods() {
-        if (!this.currentUser) return;
+        console.log('📝 Rendering recent moods for user:', this.currentUser?.id);
+
+        if (!this.currentUser) {
+            console.log('❌ No current user, skipping recent moods render');
+            return;
+        }
 
         try {
+            console.log('📡 Fetching recent moods...');
             const response = await fetch(`/api/moods/${this.currentUser.id}`);
+            console.log('📡 Recent moods response status:', response.status);
+
             const moods = await response.json();
+            console.log('📡 Recent moods data:', moods);
 
             const recentMoods = moods.slice(-5).reverse();
+            console.log('📝 Recent moods to display:', recentMoods.length);
+
             const container = document.getElementById('recent-moods-list');
 
-            container.innerHTML = recentMoods.map(mood => `
-                <div class="mood-item">
-                    <div class="mood-emoji">${mood.mood}</div>
-                    <div class="mood-info">
-                        <div class="mood-date">${new Date(mood.date).toLocaleDateString()}</div>
-                        ${mood.note ? `<div class="mood-note">${mood.note}</div>` : ''}
+            if (recentMoods.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <h4>Start Your Journey</h4>
+                        <p>Log your first mood to see your emotional patterns emerge</p>
                     </div>
-                </div>
-            `).join('');
+                `;
+                console.log('📝 No moods found, showing empty state');
+            } else {
+                container.innerHTML = recentMoods.map(mood => `
+                    <div class="mood-item">
+                        <div class="mood-emoji">${mood.mood}</div>
+                        <div class="mood-info">
+                            <div class="mood-date">${new Date(mood.date).toLocaleDateString()}</div>
+                            ${mood.note ? `<div class="mood-note">${mood.note}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                console.log('✅ Recent moods rendered successfully');
+            }
         } catch (error) {
-            console.error('Failed to load recent moods:', error);
+            console.error('❌ Failed to load recent moods:', error);
+            const container = document.getElementById('recent-moods-list');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>Unable to Load Moods</h4>
+                    <p>Please check your connection and try again</p>
+                </div>
+            `;
         }
     }
 
@@ -291,14 +373,19 @@ class MoodBuddyApp {
     }
 
     async saveMood() {
+        console.log('😊 Attempting to save mood...');
+
         if (!this.currentUser || !this.selectedMood) {
+            console.log('❌ No user or mood selected');
             this.showToast('Please select a mood', 'warning');
             return;
         }
 
         const note = document.getElementById('mood-note').value;
+        console.log('📝 Mood data:', { userId: this.currentUser.id, mood: this.selectedMood, note });
 
         try {
+            console.log('📡 Making mood save API call...');
             const response = await fetch('/api/moods', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -309,9 +396,12 @@ class MoodBuddyApp {
                 })
             });
 
+            console.log('📡 Mood save response status:', response.status);
             const data = await response.json();
+            console.log('📡 Mood save response data:', data);
 
             if (response.ok) {
+                console.log('✅ Mood saved successfully');
                 this.showToast('Mood logged successfully!', 'success');
                 document.getElementById('mood-note').value = '';
                 document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
@@ -319,27 +409,39 @@ class MoodBuddyApp {
                 this.switchPage('dashboard');
                 this.loadDashboard();
             } else {
-                this.showToast(data.error, 'error');
+                console.log('❌ Mood save failed:', data.error);
+                this.showToast(data.error || 'Failed to save mood', 'error');
             }
         } catch (error) {
-            this.showToast('Failed to save mood', 'error');
+            console.error('❌ Mood save error:', error);
+            this.showToast('Network error. Please try again.', 'error');
         }
     }
 
     async getSuggestions() {
-        if (!this.currentUser) return;
+        console.log('💡 Getting AI suggestions for user:', this.currentUser?.id);
+
+        if (!this.currentUser) {
+            console.log('❌ No current user, skipping suggestions');
+            return;
+        }
 
         try {
+            console.log('📡 Fetching recent moods for context...');
             // Get recent moods for context
             const response = await fetch(`/api/moods/${this.currentUser.id}`);
             const moods = await response.json();
             const recentMoods = moods.slice(-7).map(m => m.mood);
 
+            console.log('📝 Recent moods for suggestions:', recentMoods);
+
             if (recentMoods.length === 0) {
+                console.log('⚠️ No moods logged yet');
                 this.showToast('Log some moods first to get personalized suggestions', 'warning');
                 return;
             }
 
+            console.log('🤖 Making suggestions API call...');
             const suggestionsResponse = await fetch('/api/suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -349,15 +451,20 @@ class MoodBuddyApp {
                 })
             });
 
+            console.log('🤖 Suggestions response status:', suggestionsResponse.status);
             const data = await suggestionsResponse.json();
+            console.log('🤖 Suggestions response data:', data);
 
             if (suggestionsResponse.ok) {
+                console.log('✅ Suggestions received successfully');
                 this.renderSuggestions(data.suggestions);
             } else {
+                console.log('❌ Suggestions API failed:', data.error);
                 this.showToast('Failed to get suggestions', 'error');
             }
         } catch (error) {
-            this.showToast('Failed to get suggestions', 'error');
+            console.error('❌ Suggestions error:', error);
+            this.showToast('Network error getting suggestions', 'error');
         }
     }
 
@@ -373,10 +480,17 @@ class MoodBuddyApp {
     }
 
     async sendMessage() {
+        console.log('💬 Sending chat message...');
+
         const input = document.getElementById('chat-input');
         const message = input.value.trim();
 
-        if (!message || !this.currentUser) return;
+        if (!message || !this.currentUser) {
+            console.log('❌ No message or user');
+            return;
+        }
+
+        console.log('💬 User message:', message);
 
         // Add user message to chat
         this.addMessageToChat(message, 'user');
@@ -392,6 +506,7 @@ class MoodBuddyApp {
         this.showTypingIndicator();
 
         try {
+            console.log('🤖 Making chat API call...');
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -401,19 +516,23 @@ class MoodBuddyApp {
                 })
             });
 
+            console.log('🤖 Chat response status:', response.status);
             const data = await response.json();
+            console.log('🤖 Chat response data:', data);
 
             // Hide typing indicator
             this.hideTypingIndicator();
 
             if (response.ok) {
+                console.log('✅ Chat response received');
                 // Add assistant response to chat
                 this.addMessageToChat(data.response, 'assistant');
             } else {
+                console.log('❌ Chat API failed:', data.error);
                 this.addMessageToChat('I\'m here to listen. Please try again.', 'assistant');
             }
         } catch (error) {
-            console.error('Chat error:', error);
+            console.error('❌ Chat error:', error);
             this.hideTypingIndicator();
             this.addMessageToChat('I\'m experiencing some technical difficulties, but I\'m still here for you. Please try again in a moment.', 'assistant');
         }
@@ -953,20 +1072,35 @@ class MoodBuddyApp {
     }
 
     toggleTheme() {
+        console.log('🎨 Toggling theme...');
+
         const body = document.body;
         const themeToggle = document.getElementById('theme-toggle');
 
-        if (!themeToggle) return;
+        if (!themeToggle) {
+            console.log('❌ Theme toggle button not found');
+            return;
+        }
 
-        body.classList.toggle('dark-mode');
-        const isDark = body.classList.contains('dark-mode');
+        const currentTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        console.log(`🎨 Switching from ${currentTheme} to ${newTheme}`);
+
+        // Apply the new theme
+        if (newTheme === 'dark') {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
+
+        // Save to localStorage
+        localStorage.setItem('theme', newTheme);
 
         // Update toggle icon
         const icon = themeToggle.querySelector('i');
         if (icon) {
-            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
 
         // Add transition effect
@@ -975,7 +1109,8 @@ class MoodBuddyApp {
             body.style.transition = '';
         }, 300);
 
-        this.showToast(`Switched to ${isDark ? 'dark' : 'light'} mode`, 'success');
+        console.log(`✅ Theme switched to ${newTheme}`);
+        this.showToast(`Switched to ${newTheme} mode`, 'success');
     }
 
     loadTheme() {

@@ -345,9 +345,19 @@ app.get('/api/dashboard/:userId', async (req, res) => {
 });
 
 // OpenAI client
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-}) : null;
+let openai = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+    console.log('OpenAI client initialized successfully');
+  } else {
+    console.log('OpenAI API key not found - using fallback responses');
+  }
+} catch (error) {
+  console.error('Failed to initialize OpenAI client:', error.message);
+}
 
 // Pre-defined suggestions database
 const suggestionsDatabase = {
@@ -465,27 +475,63 @@ const suggestionsDatabase = {
 
 app.post('/api/suggestions', async (req, res) => {
    try {
+     console.log('🤖 Suggestions API called');
      const { userId, recentMoods } = req.body;
 
      if (!userId || !recentMoods || recentMoods.length === 0) {
+       console.log('❌ Missing required parameters');
        return res.status(400).json({ error: 'User ID and recent moods are required' });
      }
 
-     // Get the most recent mood
-     const currentMood = recentMoods[recentMoods.length - 1];
+     console.log('📊 Recent moods:', recentMoods);
 
-     // Get suggestions for the current mood
+     // Try OpenAI first
+     if (openai) {
+       try {
+         console.log('🚀 Trying OpenAI for suggestions...');
+         const currentMood = recentMoods[recentMoods.length - 1];
+         const prompt = `Based on this recent mood: ${currentMood}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
+
+         const completion = await openai.chat.completions.create({
+           model: 'gpt-3.5-turbo',
+           messages: [{ role: 'user', content: prompt }],
+           max_tokens: 300,
+           temperature: 0.7
+         });
+
+         const response = completion.choices[0].message.content;
+         console.log('✅ OpenAI response received');
+
+         // Parse suggestions from response
+         const suggestions = response
+           .split('\n')
+           .filter(line => line.trim() && (line.match(/^\d+\./) || line.match(/^[•\-*]/)))
+           .slice(0, 3)
+           .map(s => s.replace(/^\d+\.\s*/, '').replace(/^[•\-*]\s*/, '').trim());
+
+         if (suggestions.length > 0) {
+           console.log('✅ Returning OpenAI suggestions');
+           return res.json({ suggestions });
+         }
+       } catch (openaiError) {
+         console.log('❌ OpenAI failed, using fallback:', openaiError.message);
+       }
+     }
+
+     // Fallback to database suggestions
+     console.log('📚 Using fallback suggestions database');
+     const currentMood = recentMoods[recentMoods.length - 1];
      const moodSuggestions = suggestionsDatabase[currentMood] || suggestionsDatabase['😐'];
 
      // Randomly select 3 suggestions
      const shuffled = [...moodSuggestions].sort(() => 0.5 - Math.random());
      const selectedSuggestions = shuffled.slice(0, 3);
 
-     console.log(`Returning ${selectedSuggestions.length} suggestions for mood: ${currentMood}`);
+     console.log(`📚 Returning ${selectedSuggestions.length} fallback suggestions for mood: ${currentMood}`);
      return res.json({ suggestions: selectedSuggestions });
 
    } catch (error) {
-     console.error('Suggestions error:', error.message);
+     console.error('❌ Suggestions error:', error.message);
      return res.status(500).json({ error: 'Failed to get suggestions. Please try again.' });
    }
 });
@@ -579,26 +625,48 @@ function analyzeMessage(message) {
 // AI Chat/Assistant endpoint
 app.post('/api/chat', async (req, res) => {
    try {
+     console.log('💬 Chat API called');
      const { userId, message } = req.body;
 
      if (!userId || !message) {
+       console.log('❌ Missing userId or message');
        return res.status(400).json({ error: 'User ID and message are required' });
      }
 
-     // Analyze the message to determine response type
+     console.log('💬 User message:', message.substring(0, 100) + '...');
+
+     // Try OpenAI first
+     if (openai) {
+       try {
+         console.log('🚀 Trying OpenAI for chat...');
+         const prompt = `${message} Please respond as a supportive, empathetic AI assistant focused on mental health and emotional well-being. Keep your response under 150 words and be encouraging and understanding.`;
+
+         const completion = await openai.chat.completions.create({
+           model: 'gpt-3.5-turbo',
+           messages: [{ role: 'user', content: prompt }],
+           max_tokens: 200,
+           temperature: 0.7
+         });
+
+         const aiResponse = completion.choices[0].message.content.trim();
+         console.log('✅ OpenAI chat response received');
+         return res.json({ response: aiResponse });
+       } catch (openaiError) {
+         console.log('❌ OpenAI chat failed, using fallback:', openaiError.message);
+       }
+     }
+
+     // Fallback to predefined responses
+     console.log('📝 Using fallback chat responses');
      const responseType = analyzeMessage(message);
-
-     // Get appropriate responses for the detected emotion/type
      const responses = chatResponses[responseType] || chatResponses['general'];
-
-     // Select a random response
      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
 
-     console.log(`Chat response for ${responseType}: ${randomResponse.substring(0, 50)}...`);
+     console.log(`📝 Chat response for ${responseType}: ${randomResponse.substring(0, 50)}...`);
      return res.json({ response: randomResponse });
 
    } catch (error) {
-     console.error('Chat error:', error.message);
+     console.error('❌ Chat error:', error.message);
      return res.status(500).json({ error: 'I\'m experiencing some technical difficulties, but I\'m still here for you. Please try again in a moment.' });
    }
 });
