@@ -511,6 +511,43 @@ class MoodBuddyApp {
         }
     }
 
+    toggleEditField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        const isEditable = field.getAttribute('contenteditable') === 'true';
+        field.setAttribute('contenteditable', !isEditable);
+
+        if (!isEditable) {
+            field.focus();
+            field.classList.add('editing');
+        } else {
+            field.classList.remove('editing');
+        }
+    }
+
+    saveField(type) {
+        const field = document.getElementById(`profile-${type}`);
+        if (!field) return;
+
+        const newValue = field.textContent.trim();
+        field.setAttribute('contenteditable', 'false');
+        field.classList.remove('editing');
+
+        // Here you could save to backend if needed
+        // For now, just show success feedback
+        this.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully`, 'success');
+    }
+
+    cancelEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        field.setAttribute('contenteditable', 'false');
+        field.classList.remove('editing');
+        // Reset to original value if needed
+    }
+
     loadSavedAvatar() {
         const savedAvatar = localStorage.getItem(`avatar_${this.currentUser.id}`);
         const avatarDisplay = document.getElementById('profile-avatar-display');
@@ -919,6 +956,8 @@ class MoodBuddyApp {
         const body = document.body;
         const themeToggle = document.getElementById('theme-toggle');
 
+        if (!themeToggle) return;
+
         body.classList.toggle('dark-mode');
         const isDark = body.classList.contains('dark-mode');
 
@@ -935,6 +974,8 @@ class MoodBuddyApp {
         setTimeout(() => {
             body.style.transition = '';
         }, 300);
+
+        this.showToast(`Switched to ${isDark ? 'dark' : 'light'} mode`, 'success');
     }
 
     loadTheme() {
@@ -968,11 +1009,29 @@ class MoodBuddyApp {
         const refreshQuote = document.getElementById('refresh-quote');
         if (refreshQuote) refreshQuote.addEventListener('click', () => this.loadDailyQuote());
 
-        // Profile editing
-        const editUsernameBtn = document.getElementById('edit-username-btn');
-        const editBioBtn = document.getElementById('edit-bio-btn');
-        if (editUsernameBtn) editUsernameBtn.addEventListener('click', () => this.toggleEditField('profile-username'));
-        if (editBioBtn) editBioBtn.addEventListener('click', () => this.toggleEditField('profile-bio'));
+        // Avatar upload
+        const changeAvatarBtn = document.getElementById('change-avatar-btn');
+        const removeAvatarBtn = document.getElementById('remove-avatar-btn');
+        const avatarUpload = document.getElementById('avatar-upload');
+
+        if (changeAvatarBtn) changeAvatarBtn.addEventListener('click', () => avatarUpload.click());
+        if (avatarUpload) avatarUpload.addEventListener('change', (e) => this.handleAvatarUpload(e));
+        if (removeAvatarBtn) removeAvatarBtn.addEventListener('click', () => this.removeAvatar());
+
+        // Avatar crop modal
+        const cropModalClose = document.getElementById('crop-modal-close');
+        const cropCancel = document.getElementById('crop-cancel');
+        const cropSave = document.getElementById('crop-save');
+        const cropZoomIn = document.getElementById('crop-zoom-in');
+        const cropZoomOut = document.getElementById('crop-zoom-out');
+        const cropRotate = document.getElementById('crop-rotate');
+
+        if (cropModalClose) cropModalClose.addEventListener('click', () => this.closeCropModal());
+        if (cropCancel) cropCancel.addEventListener('click', () => this.closeCropModal());
+        if (cropSave) cropSave.addEventListener('click', () => this.saveCroppedAvatar());
+        if (cropZoomIn) cropZoomIn.addEventListener('click', () => this.adjustCrop('zoomIn'));
+        if (cropZoomOut) cropZoomOut.addEventListener('click', () => this.adjustCrop('zoomOut'));
+        if (cropRotate) cropRotate.addEventListener('click', () => this.adjustCrop('rotate'));
 
         // Editable field events
         const profileUsername = document.getElementById('profile-username');
@@ -1003,41 +1062,181 @@ class MoodBuddyApp {
         }
     }
 
-    toggleEditField(fieldId) {
-        const field = document.getElementById(fieldId);
-        if (!field) return;
+    handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-        const isEditable = field.getAttribute('contenteditable') === 'true';
-        field.setAttribute('contenteditable', !isEditable);
-
-        if (!isEditable) {
-            field.focus();
-            field.classList.add('editing');
-        } else {
-            field.classList.remove('editing');
+        if (!file.type.startsWith('image/')) {
+            this.showToast('Please select a valid image file', 'error');
+            return;
         }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            this.showToast('Image size should be less than 5MB', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.originalImageData = e.target.result;
+            this.openCropModal(e.target.result);
+        };
+        reader.readAsDataURL(file);
     }
 
-    saveField(type) {
-        const field = document.getElementById(`profile-${type}`);
-        if (!field) return;
+    openCropModal(imageData) {
+        const modal = document.getElementById('avatar-crop-modal');
+        const cropImage = document.getElementById('crop-image');
 
-        const newValue = field.textContent.trim();
-        field.setAttribute('contenteditable', 'false');
-        field.classList.remove('editing');
+        if (!modal || !cropImage) return;
 
-        // Here you could save to backend if needed
-        // For now, just show success feedback
-        this.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully`, 'success');
+        cropImage.src = imageData;
+        modal.style.display = 'flex';
+
+        // Initialize crop variables
+        this.cropScale = 1;
+        this.cropRotation = 0;
+        this.updateCropDisplay();
     }
 
-    cancelEdit(fieldId) {
-        const field = document.getElementById(fieldId);
-        if (!field) return;
+    closeCropModal() {
+        const modal = document.getElementById('avatar-crop-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        // Reset file input
+        const avatarUpload = document.getElementById('avatar-upload');
+        if (avatarUpload) avatarUpload.value = '';
+    }
 
-        field.setAttribute('contenteditable', 'false');
-        field.classList.remove('editing');
-        // Reset to original value if needed
+    adjustCrop(action) {
+        const cropImage = document.getElementById('crop-image');
+        if (!cropImage) return;
+
+        switch (action) {
+            case 'zoomIn':
+                this.cropScale = Math.min(this.cropScale + 0.1, 3);
+                break;
+            case 'zoomOut':
+                this.cropScale = Math.max(this.cropScale - 0.1, 0.5);
+                break;
+            case 'rotate':
+                this.cropRotation = (this.cropRotation + 90) % 360;
+                break;
+        }
+
+        this.updateCropDisplay();
+    }
+
+    updateCropDisplay() {
+        const cropImage = document.getElementById('crop-image');
+        if (!cropImage) return;
+
+        cropImage.style.transform = `scale(${this.cropScale}) rotate(${this.cropRotation}deg)`;
+    }
+
+    saveCroppedAvatar() {
+        const cropImage = document.getElementById('crop-image');
+        if (!cropImage) return;
+
+        // Create canvas for cropping
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const size = 200; // Avatar size
+
+        canvas.width = size;
+        canvas.height = size;
+
+        // Calculate crop area (center square)
+        const img = cropImage;
+        const imgSize = Math.min(img.naturalWidth, img.naturalHeight);
+        const startX = (img.naturalWidth - imgSize) / 2;
+        const startY = (img.naturalHeight - imgSize) / 2;
+
+        // Apply transformations and draw
+        ctx.save();
+        ctx.translate(size / 2, size / 2);
+        ctx.rotate((this.cropRotation * Math.PI) / 180);
+        ctx.scale(this.cropScale, this.cropScale);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+
+        const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+        // Update avatar display
+        const avatarDisplay = document.getElementById('profile-avatar-display');
+        const userAvatar = document.querySelector('.user-avatar');
+
+        if (avatarDisplay) {
+            avatarDisplay.style.backgroundImage = `url(${croppedDataUrl})`;
+            avatarDisplay.style.backgroundSize = 'cover';
+            avatarDisplay.style.backgroundPosition = 'center';
+            avatarDisplay.innerHTML = ''; // Remove default icon
+        }
+
+        if (userAvatar) {
+            userAvatar.style.backgroundImage = `url(${croppedDataUrl})`;
+            userAvatar.style.backgroundSize = 'cover';
+            userAvatar.style.backgroundPosition = 'center';
+            userAvatar.innerHTML = ''; // Remove default icon
+        }
+
+        // Show remove button
+        const removeBtn = document.getElementById('remove-avatar-btn');
+        if (removeBtn) removeBtn.style.display = 'inline-block';
+
+        // Save to localStorage
+        localStorage.setItem('userAvatar', croppedDataUrl);
+
+        this.closeCropModal();
+        this.showToast('Avatar updated successfully!', 'success');
+    }
+
+    removeAvatar() {
+        const avatarDisplay = document.getElementById('profile-avatar-display');
+        const userAvatar = document.querySelector('.user-avatar');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+
+        if (avatarDisplay) {
+            avatarDisplay.style.backgroundImage = '';
+            avatarDisplay.innerHTML = '<i class="fas fa-user"></i>';
+        }
+
+        if (userAvatar) {
+            userAvatar.style.backgroundImage = '';
+            userAvatar.innerHTML = '<i class="fas fa-user"></i>';
+        }
+
+        if (removeBtn) removeBtn.style.display = 'none';
+
+        localStorage.removeItem('userAvatar');
+        this.showToast('Avatar removed', 'success');
+    }
+
+    loadSavedAvatar() {
+        const savedAvatar = localStorage.getItem('userAvatar');
+        if (savedAvatar) {
+            const avatarDisplay = document.getElementById('profile-avatar-display');
+            const userAvatar = document.querySelector('.user-avatar');
+
+            if (avatarDisplay) {
+                avatarDisplay.style.backgroundImage = `url(${savedAvatar})`;
+                avatarDisplay.style.backgroundSize = 'cover';
+                avatarDisplay.style.backgroundPosition = 'center';
+                avatarDisplay.innerHTML = '';
+            }
+
+            if (userAvatar) {
+                userAvatar.style.backgroundImage = `url(${savedAvatar})`;
+                userAvatar.style.backgroundSize = 'cover';
+                userAvatar.style.backgroundPosition = 'center';
+                userAvatar.innerHTML = '';
+            }
+
+            // Show remove button
+            const removeBtn = document.getElementById('remove-avatar-btn');
+            if (removeBtn) removeBtn.style.display = 'inline-block';
+        }
     }
 
     addMicroAnimations() {

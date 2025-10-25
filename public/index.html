@@ -519,7 +519,7 @@
                 <div id="profile-page" class="page">
                     <div class="page-header">
                         <h2>My Profile</h2>
-                        <p>Manage your account settings and preferences.</p>
+                        <p>Update your profile picture and view your stats.</p>
                     </div>
 
                     <div class="profile-container">
@@ -528,12 +528,18 @@
                                 <div class="profile-avatar-large" id="profile-avatar-display">
                                     <i class="fas fa-user"></i>
                                 </div>
-                                <div class="avatar-upload-section">
+                                <div class="avatar-buttons">
                                     <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
-                                    <button class="btn-secondary" id="change-avatar-btn">Change Avatar</button>
-                                    <button class="btn-secondary" id="remove-avatar-btn" style="display: none;">Remove Avatar</button>
+                                    <button class="btn-secondary" id="change-avatar-btn">
+                                        <i class="fas fa-camera"></i>
+                                        Change Avatar
+                                    </button>
+                                    <button class="btn-secondary" id="remove-avatar-btn" style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                        Remove
+                                    </button>
                                 </div>
-        
+
                                 <!-- Avatar Crop Modal -->
                                 <div id="avatar-crop-modal" class="modal" style="display: none;">
                                     <div class="modal-content">
@@ -560,25 +566,14 @@
                             </div>
 
                             <div class="profile-info">
-                                <div class="info-group editable">
+                                <div class="info-group">
                                     <label>Username</label>
-                                    <div class="info-value editable-field" id="profile-username" contenteditable="false">Loading...</div>
-                                    <button class="edit-btn" id="edit-username-btn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                    <div class="info-value" id="profile-username">Loading...</div>
                                 </div>
 
                                 <div class="info-group">
                                     <label>Email</label>
                                     <div class="info-value" id="profile-email">Loading...</div>
-                                </div>
-
-                                <div class="info-group editable">
-                                    <label>Bio</label>
-                                    <div class="info-value editable-field bio-field" id="profile-bio" contenteditable="false" data-placeholder="Tell us about yourself...">Loading...</div>
-                                    <button class="edit-btn" id="edit-bio-btn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
                                 </div>
 
                                 <div class="info-group">
@@ -596,17 +591,6 @@
                                     <div class="info-value" id="profile-streak">0 days</div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="profile-actions">
-                            <button class="btn-secondary" id="export-data-btn">
-                                <i class="fas fa-download"></i>
-                                Export My Data
-                            </button>
-                            <button class="btn-danger" id="delete-account-btn">
-                                <i class="fas fa-trash"></i>
-                                Delete Account
-                            </button>
                         </div>
                     </div>
                 </div>
