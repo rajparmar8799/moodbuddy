@@ -159,13 +159,17 @@ class MoodBuddyApp {
             document.getElementById('user-display-name').textContent = this.currentUser.username;
 
             // Update top nav avatar
-            const topNavAvatar = document.querySelector('.user-avatar');
-            const savedAvatar = localStorage.getItem(`avatar_${this.currentUser.id}`);
-            if (savedAvatar) {
-                topNavAvatar.innerHTML = `<img src="${savedAvatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-            } else {
-                topNavAvatar.innerHTML = '<i class="fas fa-user"></i>';
-            }
+            this.updateTopNavAvatar();
+        }
+    }
+
+    updateTopNavAvatar() {
+        const topNavAvatar = document.querySelector('.user-avatar');
+        const savedAvatar = localStorage.getItem(`avatar_${this.currentUser.id}`);
+        if (savedAvatar) {
+            topNavAvatar.innerHTML = `<img src="${savedAvatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            topNavAvatar.innerHTML = '<i class="fas fa-user"></i>';
         }
     }
 
@@ -486,10 +490,11 @@ class MoodBuddyApp {
 
         // Load profile data
         if (this.currentUser) {
-            document.getElementById('profile-username').textContent = this.currentUser.username || 'N/A';
-            document.getElementById('profile-email').textContent = this.currentUser.email || 'N/A';
+            // Show real user data immediately
+            document.getElementById('profile-username').textContent = this.currentUser.username;
+            document.getElementById('profile-email').textContent = this.currentUser.email;
             document.getElementById('profile-joined').textContent = this.currentUser.created_at ?
-                new Date(this.currentUser.created_at).toLocaleDateString() : 'N/A';
+                new Date(this.currentUser.created_at).toLocaleDateString() : 'Unknown';
 
             // Load saved avatar
             this.loadSavedAvatar();
@@ -526,6 +531,7 @@ class MoodBuddyApp {
             if (this.currentUser) {
                 localStorage.removeItem(`avatar_${this.currentUser.id}`);
                 this.loadSavedAvatar();
+                this.updateTopNavAvatar(); // Update top nav avatar too
                 this.showToast('Avatar removed successfully', 'success');
             }
         });
@@ -579,6 +585,7 @@ class MoodBuddyApp {
                     if (this.currentUser) {
                         localStorage.setItem(`avatar_${this.currentUser.id}`, resizedImage);
                         this.loadSavedAvatar();
+                        this.updateTopNavAvatar(); // Update top nav avatar too
                         this.showToast('Avatar updated successfully', 'success');
                     }
                 };
