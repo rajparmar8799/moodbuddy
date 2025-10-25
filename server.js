@@ -446,11 +446,11 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Export for Vercel
-module.exports = app;
-
-// For local development
-if (require.main === module) {
+// For Vercel deployment
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  // For local development
   app.listen(PORT, async () => {
     console.log(`Mood Buddy server running on http://localhost:${PORT}`);
     console.log(`Using Supabase storage`);
