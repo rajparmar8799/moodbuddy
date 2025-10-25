@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mood Buddy - Track Your Emotions</title>
+    <title>Mood Buddy - Your Personal Mood Companion</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💙</text></svg>">
 </head>
 <body>
     <div id="app">
@@ -14,9 +16,38 @@
         <div id="auth-screen" class="screen active">
             <div class="auth-container">
                 <div class="auth-header">
-                    <i class="fas fa-heart"></i>
+                    <div class="logo-illustration">
+                        <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="45" fill="url(#gradient1)" opacity="0.1"/>
+                            <circle cx="50" cy="50" r="35" fill="url(#gradient1)" opacity="0.2"/>
+                            <path d="M35 45 Q50 35 65 45 Q50 55 35 45" stroke="url(#gradient1)" stroke-width="3" fill="none"/>
+                            <circle cx="42" cy="42" r="3" fill="url(#gradient1)"/>
+                            <circle cx="58" cy="42" r="3" fill="url(#gradient1)"/>
+                            <path d="M45 50 Q50 52 55 50" stroke="url(#gradient1)" stroke-width="2" fill="none"/>
+                            <defs>
+                                <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#667eea"/>
+                                    <stop offset="100%" style="stop-color:#764ba2"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
                     <h1>Mood Buddy</h1>
                     <p>Your personal mood tracking companion</p>
+                    <div class="welcome-features">
+                        <div class="feature-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Track your emotions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Get AI suggestions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-comments"></i>
+                            <span>Chat with your assistant</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="auth-tabs">
@@ -28,31 +59,52 @@
                 <!-- Login Form -->
                 <form id="login-form" class="auth-form active">
                     <div class="form-group">
-                        <label for="login-email">Email</label>
-                        <input type="email" id="login-email" required>
+                        <label for="login-email">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input type="email" id="login-email" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" required>
+                        <label for="login-password">
+                            <i class="fas fa-lock"></i>
+                            Password
+                        </label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
                     </div>
-                    <button type="submit" class="btn-primary">Login</button>
+                    <button type="submit" class="btn-primary">
+                        <span>Sign In</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
                 </form>
 
                 <!-- Signup Form -->
                 <form id="signup-form" class="auth-form">
                     <div class="form-group">
-                        <label for="signup-username">Username</label>
-                        <input type="text" id="signup-username" required>
+                        <label for="signup-username">
+                            <i class="fas fa-user"></i>
+                            Username
+                        </label>
+                        <input type="text" id="signup-username" placeholder="Choose a username" required>
                     </div>
                     <div class="form-group">
-                        <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" required>
+                        <label for="signup-email">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input type="email" id="signup-email" placeholder="Enter your email" required>
                     </div>
                     <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <input type="password" id="signup-password" required>
+                        <label for="signup-password">
+                            <i class="fas fa-lock"></i>
+                            Password
+                        </label>
+                        <input type="password" id="signup-password" placeholder="Create a password" required>
                     </div>
-                    <button type="submit" class="btn-primary">Sign Up</button>
+                    <button type="submit" class="btn-primary">
+                        <span>Create Account</span>
+                        <i class="fas fa-user-plus"></i>
+                    </button>
                 </form>
             </div>
         </div>
@@ -62,15 +114,53 @@
             <!-- Sidebar Navigation -->
             <nav class="sidebar">
                 <div class="sidebar-header">
-                    <i class="fas fa-heart"></i>
-                    <span>Mood Buddy</span>
+                    <div class="sidebar-logo">
+                        <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="45" fill="url(#sidebarGradient)" opacity="0.2"/>
+                            <path d="M35 45 Q50 35 65 45 Q50 55 35 45" stroke="url(#sidebarGradient)" stroke-width="3" fill="none"/>
+                            <circle cx="42" cy="42" r="2" fill="url(#sidebarGradient)"/>
+                            <circle cx="58" cy="42" r="2" fill="url(#sidebarGradient)"/>
+                            <defs>
+                                <linearGradient id="sidebarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#ffffff"/>
+                                    <stop offset="100%" style="stop-color:#e0e7ff"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span>Mood Buddy</span>
+                    </div>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="#" data-page="dashboard" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="#" data-page="log-mood" class="nav-link"><i class="fas fa-plus-circle"></i> Log Mood</a></li>
-                    <li><a href="#" data-page="suggestions" class="nav-link"><i class="fas fa-lightbulb"></i> Suggestions</a></li>
-                    <li><a href="#" data-page="assistant" class="nav-link"><i class="fas fa-comments"></i> AI Assistant</a></li>
-                    <li><a href="#" id="logout-btn" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="#" data-page="dashboard" class="nav-link active">
+                        <div class="nav-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span>Dashboard</span>
+                    </a></li>
+                    <li><a href="#" data-page="log-mood" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <span>Log Mood</span>
+                    </a></li>
+                    <li><a href="#" data-page="suggestions" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <span>Suggestions</span>
+                    </a></li>
+                    <li><a href="#" data-page="assistant" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <span>AI Assistant</span>
+                    </a></li>
+                    <li><a href="#" id="logout-btn" class="nav-link">
+                        <div class="nav-icon">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <span>Logout</span>
+                    </a></li>
                 </ul>
             </nav>
 
@@ -119,6 +209,10 @@
                             <div class="stat-content">
                                 <h3 id="total-entries">0</h3>
                                 <p>Total Entries</p>
+                                <div class="stat-trend">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>Keep going!</span>
+                                </div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -128,6 +222,10 @@
                             <div class="stat-content">
                                 <h3 id="current-streak">0</h3>
                                 <p>Day Streak</p>
+                                <div class="stat-trend positive">
+                                    <i class="fas fa-fire"></i>
+                                    <span>You're on fire!</span>
+                                </div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -137,19 +235,43 @@
                             <div class="stat-content">
                                 <h3 id="average-mood">0.0</h3>
                                 <p>Average Mood</p>
+                                <div class="stat-trend">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Your balance</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="chart-container">
-                        <h3>Mood Trends</h3>
-                        <canvas id="mood-chart"></canvas>
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-chart-line"></i>
+                                Your Mood Journey
+                            </h3>
+                            <p>Track your emotional patterns over time</p>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="mood-chart"></canvas>
+                        </div>
                     </div>
 
                     <div class="recent-moods">
-                        <h3>Recent Moods</h3>
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-history"></i>
+                                Recent Entries
+                            </h3>
+                            <p>Your latest mood reflections</p>
+                        </div>
                         <div id="recent-moods-list" class="moods-list">
-                            <!-- Recent moods will be populated here -->
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <h4>Start Your Journey</h4>
+                                <p>Log your first mood to see your emotional patterns emerge</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -157,6 +279,9 @@
                 <!-- Log Mood Page -->
                 <div id="log-mood-page" class="page">
                     <div class="page-header">
+                        <div class="mood-header-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
                         <h2>How are you feeling today?</h2>
                         <p>Select your current mood and add a note if you'd like.</p>
                     </div>
@@ -185,32 +310,57 @@
                     </div>
 
                     <div class="note-section">
-                        <label for="mood-note">Add a note (optional)</label>
-                        <textarea id="mood-note" placeholder="How are you feeling? What's on your mind?"></textarea>
+                        <label for="mood-note">
+                            <i class="fas fa-sticky-note"></i>
+                            Add a note (optional)
+                        </label>
+                        <textarea id="mood-note" placeholder="How are you feeling? What's on your mind? Share your thoughts..."></textarea>
                     </div>
 
-                    <button id="save-mood-btn" class="btn-primary">Save Mood</button>
+                    <div class="mood-actions">
+                        <button id="save-mood-btn" class="btn-primary">
+                            <i class="fas fa-save"></i>
+                            <span>Save Mood Entry</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Suggestions Page -->
                 <div id="suggestions-page" class="page">
                     <div class="page-header">
-                        <h2>AI Suggestions</h2>
-                        <p>Personalized recommendations to improve your mood.</p>
+                        <div class="suggestions-header-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h2>AI-Powered Suggestions</h2>
+                        <p>Personalized recommendations to improve your mood and well-being.</p>
                     </div>
 
                     <div id="suggestions-container" class="suggestions-grid">
-                        <!-- AI suggestions will be populated here -->
+                        <div class="suggestion-placeholder">
+                            <div class="placeholder-icon">
+                                <i class="fas fa-magic"></i>
+                            </div>
+                            <h4>Get Your First Suggestions</h4>
+                            <p>Log some moods and let our AI provide personalized recommendations for your well-being</p>
+                        </div>
                     </div>
 
-                    <button id="refresh-suggestions-btn" class="btn-secondary">Get New Suggestions</button>
+                    <div class="suggestions-actions">
+                        <button id="refresh-suggestions-btn" class="btn-primary">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Get New Suggestions</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- AI Assistant/Chat Page -->
                 <div id="assistant-page" class="page">
                     <div class="page-header">
-                        <h2>AI Assistant</h2>
-                        <p>Talk to your personal mood companion. I'm here to listen and support you.</p>
+                        <div class="assistant-header-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h2>Your AI Companion</h2>
+                        <p>Talk to your personal mood companion. I'm here to listen and support you with kindness and understanding.</p>
                     </div>
 
                     <div class="chat-container">
