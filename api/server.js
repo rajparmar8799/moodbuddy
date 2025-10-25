@@ -19,7 +19,7 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Initialize Supabase tables if they don't exist
 async function initializeSupabaseTables() {
@@ -79,6 +79,11 @@ CREATE TABLE moods (
 
 // Use Supabase for storage (required for Vercel deployment)
 const USE_SUPABASE = true;
+
+// Root route for serving the main page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
 
 // Routes
 app.post('/api/auth/signup', async (req, res) => {
