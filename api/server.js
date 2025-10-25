@@ -10,10 +10,17 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Supabase client - only initialize if environment variables are available
+// Supabase client - initialize with error handling
 let supabase = null;
-if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.log('Supabase environment variables not found');
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error.message);
 }
 
 // Middleware

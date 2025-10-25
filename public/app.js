@@ -474,10 +474,10 @@ class MoodBuddyApp {
 
         // Load profile data
         if (this.currentUser) {
-            document.getElementById('profile-username').textContent = this.currentUser.username || 'Loading...';
-            document.getElementById('profile-email').textContent = this.currentUser.email || 'Loading...';
+            document.getElementById('profile-username').textContent = this.currentUser.username || 'N/A';
+            document.getElementById('profile-email').textContent = this.currentUser.email || 'N/A';
             document.getElementById('profile-joined').textContent = this.currentUser.created_at ?
-                new Date(this.currentUser.created_at).toLocaleDateString() : 'Loading...';
+                new Date(this.currentUser.created_at).toLocaleDateString() : 'N/A';
 
             // Load additional stats
             this.loadProfileStats();
