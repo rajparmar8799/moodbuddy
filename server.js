@@ -209,7 +209,9 @@ app.post('/api/moods', async (req, res) => {
       return res.status(400).json({ error: 'User ID and mood are required' });
     }
 
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
       const { data: newMood, error } = await supabase
         .from('moods')
         .insert({
@@ -229,23 +231,6 @@ app.post('/api/moods', async (req, res) => {
       }
 
       res.status(201).json({ message: 'Mood logged successfully', mood: newMood });
-    } else {
-      // Fallback to local storage
-      const moods = readMoods();
-      const newMood = {
-        id: uuidv4(),
-        userId,
-        mood,
-        note: note || '',
-        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
-        timestamp: new Date().toISOString()
-      };
-
-      moods.push(newMood);
-      writeMoods(moods);
-
-      res.status(201).json({ message: 'Mood logged successfully', mood: newMood });
-    }
   } catch (error) {
     console.error('Mood logging error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -271,13 +256,6 @@ app.get('/api/moods/:userId', async (req, res) => {
       }
 
       res.json(userMoods);
-    } else {
-      // Fallback to local storage
-      const moods = readMoods();
-      const userMoods = moods.filter(mood => mood.userId === userId);
-
-      res.json(userMoods);
-    }
   } catch (error) {
     console.error('Get moods error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -344,56 +322,6 @@ app.get('/api/dashboard/:userId', async (req, res) => {
         currentStreak: streak,
         averageMood: averageMood.toFixed(1)
       });
-    } else {
-      // Fallback to local storage
-      const moods = readMoods();
-      const userMoods = moods.filter(mood => mood.userId === userId);
-
-      // Calculate mood statistics
-      const moodCounts = {};
-      const moodTrends = {};
-      let streak = 0;
-      let lastDate = null;
-
-      userMoods.forEach(mood => {
-        // Count moods
-        moodCounts[mood.mood] = (moodCounts[mood.mood] || 0) + 1;
-
-        // Trends by date
-        moodTrends[mood.date] = mood.mood;
-
-        // Calculate streak (consecutive days with mood entries)
-        if (lastDate) {
-          const currentDate = new Date(mood.date);
-          const prevDate = new Date(lastDate);
-          const diffTime = currentDate - prevDate;
-          const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-          if (diffDays === 1) {
-            streak++;
-          } else if (diffDays > 1) {
-            streak = 1;
-          }
-        } else {
-          streak = 1;
-        }
-        lastDate = mood.date;
-      });
-
-      const averageMood = userMoods.length > 0 ?
-        Object.entries(moodCounts).reduce((sum, [mood, count]) => {
-          const moodValue = { '😢': 1, '😟': 2, '😐': 3, '😊': 4, '😁': 5 }[mood] || 3;
-          return sum + (moodValue * count);
-        }, 0) / userMoods.length : 0;
-
-      res.json({
-        totalEntries: userMoods.length,
-        moodCounts,
-        moodTrends,
-        currentStreak: streak,
-        averageMood: averageMood.toFixed(1)
-      });
-    }
   } catch (error) {
     console.error('Dashboard error:', error);
     res.status(500).json({ error: 'Internal server error' });
