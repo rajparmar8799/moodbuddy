@@ -523,6 +523,19 @@ class MoodBuddyApp {
         const removeBtn = document.getElementById('remove-avatar-btn');
         const fileInput = document.getElementById('avatar-upload');
 
+        // Modal elements
+        const cropModal = document.getElementById('avatar-crop-modal');
+        const cropImage = document.getElementById('crop-image');
+        const cropModalClose = document.getElementById('crop-modal-close');
+        const cropCancel = document.getElementById('crop-cancel');
+        const cropSave = document.getElementById('crop-save');
+        const cropZoomIn = document.getElementById('crop-zoom-in');
+        const cropZoomOut = document.getElementById('crop-zoom-out');
+        const cropRotate = document.getElementById('crop-rotate');
+
+        let cropper = null;
+        let selectedFile = null;
+
         changeBtn.addEventListener('click', () => {
             fileInput.click();
         });
@@ -531,7 +544,7 @@ class MoodBuddyApp {
             if (this.currentUser) {
                 localStorage.removeItem(`avatar_${this.currentUser.id}`);
                 this.loadSavedAvatar();
-                this.updateTopNavAvatar(); // Update top nav avatar too
+                this.updateTopNavAvatar();
                 this.showToast('Avatar removed successfully', 'success');
             }
         });
@@ -539,63 +552,137 @@ class MoodBuddyApp {
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                this.processAvatarUpload(file);
+                selectedFile = file;
+                this.showCropModal(file);
+            }
+        });
+
+        // Modal event listeners
+        cropModalClose.addEventListener('click', () => this.hideCropModal());
+        cropCancel.addEventListener('click', () => this.hideCropModal());
+
+        cropSave.addEventListener('click', () => {
+            if (cropper) {
+                this.saveCroppedAvatar(cropper);
+            }
+        });
+
+        cropZoomIn.addEventListener('click', () => {
+            if (cropper) cropper.zoom(0.1);
+        });
+
+        cropZoomOut.addEventListener('click', () => {
+            if (cropper) cropper.zoom(-0.1);
+        });
+
+        cropRotate.addEventListener('click', () => {
+            if (cropper) cropper.rotate(90);
+        });
+
+        // Close modal when clicking outside
+        cropModal.addEventListener('click', (e) => {
+            if (e.target === cropModal) {
+                this.hideCropModal();
             }
         });
     }
 
-    async processAvatarUpload(file) {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            this.showToast('Please select a valid image file', 'error');
-            return;
+    showCropModal(file) {
+        const cropModal = document.getElementById('avatar-crop-modal');
+        const cropImage = document.getElementById('crop-image');
+
+        // Load Cropper.js library dynamically
+        if (!window.Cropper) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js';
+            script.onload = () => this.initializeCropper(file);
+            document.head.appendChild(script);
+
+            // Also load CSS
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css';
+            document.head.appendChild(link);
+        } else {
+            this.initializeCropper(file);
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            this.showToast('Image size must be less than 5MB', 'error');
-            return;
-        }
+        cropModal.style.display = 'flex';
+    }
 
+    hideCropModal() {
+        const cropModal = document.getElementById('avatar-crop-modal');
+        cropModal.style.display = 'none';
+
+        if (window.cropper) {
+            window.cropper.destroy();
+            window.cropper = null;
+        }
+    }
+
+    initializeCropper(file) {
+        const cropImage = document.getElementById('crop-image');
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            cropImage.src = e.target.result;
+
+            // Initialize Cropper
+            window.cropper = new Cropper(cropImage, {
+                aspectRatio: 1, // Square crop
+                viewMode: 1,
+                dragMode: 'move',
+                responsive: true,
+                restore: false,
+                checkCrossOrigin: false,
+                checkOrientation: false,
+                modal: true,
+                guides: true,
+                center: true,
+                highlight: true,
+                background: false,
+                autoCrop: true,
+                autoCropArea: 0.8,
+                minCropBoxWidth: 100,
+                minCropBoxHeight: 100
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async saveCroppedAvatar(cropper) {
         try {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    // Create canvas for resizing
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+            // Get cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 200,
+                height: 200,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
 
-                    // Set canvas size (square, max 200px)
-                    const size = Math.min(200, Math.min(img.width, img.height));
-                    canvas.width = size;
-                    canvas.height = size;
+            // Convert to base64
+            const croppedImage = canvas.toDataURL('image/jpeg', 0.9);
 
-                    // Calculate crop area (center square)
-                    const sourceX = (img.width - size) / 2;
-                    const sourceY = (img.height - size) / 2;
+            // Save to localStorage
+            if (this.currentUser) {
+                localStorage.setItem(`avatar_${this.currentUser.id}`, croppedImage);
+                this.loadSavedAvatar();
+                this.updateTopNavAvatar();
+                this.showToast('Avatar updated successfully', 'success');
+            }
 
-                    // Draw and crop image
-                    ctx.drawImage(img, sourceX, sourceY, size, size, 0, 0, size, size);
-
-                    // Convert to base64
-                    const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
-
-                    // Save to localStorage
-                    if (this.currentUser) {
-                        localStorage.setItem(`avatar_${this.currentUser.id}`, resizedImage);
-                        this.loadSavedAvatar();
-                        this.updateTopNavAvatar(); // Update top nav avatar too
-                        this.showToast('Avatar updated successfully', 'success');
-                    }
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+            this.hideCropModal();
         } catch (error) {
-            console.error('Avatar upload error:', error);
-            this.showToast('Failed to upload avatar', 'error');
+            console.error('Avatar crop error:', error);
+            this.showToast('Failed to save avatar', 'error');
         }
+    }
+
+    // Old method - keeping for fallback, but now using cropper
+    async processAvatarUpload(file) {
+        // This method is now replaced by the cropper functionality
+        // Keeping for backward compatibility
+        console.log('Using legacy avatar upload method');
     }
 
     async loadProfileStats() {
