@@ -28,6 +28,21 @@
     --border-radius-lg: 20px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
+
+    /* Mood-based colors */
+    --mood-sad: #3b82f6;      /* Blue for sadness */
+    --mood-neutral: #6b7280;  /* Gray for neutral */
+    --mood-happy: #eab308;    /* Yellow for happiness */
+    --mood-very-happy: #f59e0b; /* Orange for very happy */
+    --mood-very-sad: #1e40af;  /* Dark blue for very sad */
+
+    /* Dark mode variables */
+    --dark-bg-primary: #1f2937;
+    --dark-bg-secondary: #111827;
+    --dark-bg-tertiary: #374151;
+    --dark-text-primary: #f9fafb;
+    --dark-text-secondary: #d1d5db;
+    --dark-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
 body {
@@ -1719,6 +1734,748 @@ body {
     justify-content: center;
     gap: 0.75rem;
     margin-bottom: 1rem;
+}
+
+/* Calendar Styles */
+.calendar-section {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.calendar-container {
+    margin-top: 1.5rem;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-nav {
+    background: none;
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+}
+
+.calendar-nav:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.calendar-header h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+}
+
+.calendar-day-name {
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: default;
+}
+
+.calendar-day:hover {
+    transform: scale(1.05);
+}
+
+.calendar-day.today {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.mood-very-sad { background: var(--mood-very-sad); color: white; }
+.calendar-day.mood-sad { background: var(--mood-sad); color: white; }
+.calendar-day.mood-neutral { background: var(--mood-neutral); color: white; }
+.calendar-day.mood-happy { background: var(--mood-happy); color: black; }
+.calendar-day.mood-very-happy { background: var(--mood-very-happy); color: black; }
+
+/* Achievements & Badges */
+.achievements-section {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.badge-item {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    text-align: center;
+    transition: var(--transition);
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.badge-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.badge-item.unlocked {
+    background: linear-gradient(135deg, var(--success-color), #22c55e);
+    color: white;
+    border-color: var(--success-color);
+    animation: badgeUnlock 0.6s ease;
+}
+
+.badge-item.locked {
+    opacity: 0.6;
+    filter: grayscale(100%);
+}
+
+.badge-item i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.badge-item span {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+@keyframes badgeUnlock {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Challenges Section */
+.challenges-section {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.challenges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.challenge-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.challenge-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(4px);
+}
+
+.challenge-item.completed {
+    background: linear-gradient(135deg, var(--success-color), #22c55e);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.challenge-checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.challenge-item.completed .challenge-checkbox {
+    background: white;
+    border-color: white;
+}
+
+.challenge-item.completed .challenge-checkbox i {
+    color: var(--success-color);
+    font-size: 0.75rem;
+}
+
+.challenge-content span {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.challenge-content small {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.challenge-item.completed .challenge-content small {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Quote Section */
+.quote-section {
+    margin-bottom: 2rem;
+}
+
+.quote-card {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.quote-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: quoteGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes quoteGlow {
+    0% { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(180deg) scale(1.1); }
+}
+
+.quote-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.quote-content p {
+    font-size: 1.25rem;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.quote-content cite {
+    font-style: italic;
+    opacity: 0.8;
+    position: relative;
+    z-index: 1;
+}
+
+.quote-refresh {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.quote-refresh:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(180deg);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    background: none;
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.theme-toggle:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.theme-toggle.dark i::before {
+    content: '\f185'; /* sun icon */
+}
+
+/* Editable Fields */
+.editable {
+    position: relative;
+}
+
+.edit-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: var(--transition);
+    opacity: 0;
+}
+
+.editable:hover .edit-btn {
+    opacity: 1;
+}
+
+.edit-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+}
+
+.editable-field {
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: var(--transition);
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.editable-field[contenteditable="true"] {
+    background: var(--bg-secondary);
+    border: 2px solid var(--primary-color);
+    outline: none;
+}
+
+.editable-field[contenteditable="false"]:hover {
+    background: var(--bg-tertiary);
+}
+
+.bio-field {
+    min-height: 3rem;
+    align-items: flex-start;
+    padding-top: 0.75rem;
+}
+
+.bio-field[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-secondary);
+    font-style: italic;
+    pointer-events: none;
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 0.5rem;
+}
+
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--text-primary);
+    z-index: 1000;
+}
+
+/* Dark Mode */
+body.dark-mode {
+    --bg-primary: var(--dark-bg-primary);
+    --bg-secondary: var(--dark-bg-secondary);
+    --bg-tertiary: var(--dark-bg-tertiary);
+    --text-primary: var(--dark-text-primary);
+    --text-secondary: var(--dark-text-secondary);
+    --shadow-lg: var(--dark-shadow);
+    --shadow-md: var(--dark-shadow);
+    --shadow-sm: var(--dark-shadow);
+}
+
+body.dark-mode .sidebar {
+    background: var(--dark-bg-primary);
+    border-right: 1px solid var(--dark-bg-tertiary);
+}
+
+body.dark-mode .top-nav {
+    background: var(--dark-bg-primary);
+    border-bottom: 1px solid var(--dark-bg-tertiary);
+}
+
+/* Micro-animations */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-4px); }
+    60% { transform: translateY(-2px); }
+}
+
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+.animate-bounce {
+    animation: bounce 1s infinite;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .calendar-grid {
+        grid-template-columns: repeat(7, 1fr);
+        font-size: 0.75rem;
+    }
+
+    .badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .challenges-list {
+        gap: 0.75rem;
+    }
+
+    .challenge-item {
+        padding: 0.75rem;
+    }
+
+    .quote-card {
+        padding: 1.5rem;
+    }
+
+    .quote-content p {
+        font-size: 1.1rem;
+    }
+}
+
+/* Enhanced Chart Animations */
+.chart-container canvas {
+    animation: chartFadeIn 0.8s ease-out;
+}
+
+@keyframes chartFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mood Selection Animations */
+.mood-option {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.mood-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.mood-option:hover::before {
+    left: 100%;
+}
+
+.mood-option.selected {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    animation: moodSelect 0.4s ease-out;
+}
+
+@keyframes moodSelect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.05); }
+}
+
+/* Button Animations */
+.btn-primary, .btn-secondary {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before, .btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::before, .btn-secondary:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Form Animations */
+.form-group input:focus, .form-group textarea:focus {
+    animation: inputFocus 0.3s ease-out;
+}
+
+@keyframes inputFocus {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Page Transitions */
+.page {
+    animation: pageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Stats Card Animations */
+.stat-card {
+    animation: statCardFloat 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes statCardFloat {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Success/Error States */
+.success-animation {
+    animation: successPulse 0.6s ease-out;
+}
+
+.error-animation {
+    animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 768px) {
+    .calendar-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        font-size: 0.75rem;
+    }
+
+    .calendar-day {
+        padding: 0.5rem;
+        min-height: 35px;
+    }
+
+    .badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .badge-item {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .challenges-list {
+        gap: 0.5rem;
+    }
+
+    .challenge-item {
+        padding: 0.75rem;
+    }
+
+    .quote-card {
+        padding: 1.25rem;
+    }
+
+    .quote-content p {
+        font-size: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .mood-selector {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .mood-option {
+        padding: 1rem;
+    }
+
+    .mood-emoji {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .mood-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .badges-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-header h4 {
+        font-size: 1rem;
+    }
+
+    .calendar-nav {
+        width: 35px;
+        height: 35px;
+    }
+
+    .quote-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .quote-card {
+        padding: 1rem;
+    }
 }
 
 /* Utility Classes */

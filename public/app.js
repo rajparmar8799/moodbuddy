@@ -10,6 +10,13 @@ class MoodBuddyApp {
         this.bindEvents();
         this.checkAuth();
         this.requestNotificationPermission();
+        this.loadTheme();
+        this.initializeCalendar();
+        this.loadDailyQuote();
+        this.loadChallenges();
+        this.initializeBadges();
+        this.initializeThemeToggle();
+        this.initializeProfileEditing();
     }
 
     bindEvents() {
@@ -715,6 +722,347 @@ class MoodBuddyApp {
         this.showToast('Logged out successfully', 'success');
     }
 
+    // New Features Implementation
+    initializeNewFeatures() {
+        this.initializeCalendar();
+        this.loadDailyQuote();
+        this.loadChallenges();
+        this.initializeBadges();
+        this.initializeThemeToggle();
+        this.initializeProfileEditing();
+        this.addMicroAnimations();
+    }
+
+    initializeCalendar() {
+        this.currentCalendarDate = new Date();
+        this.renderCalendar();
+        this.updateCalendarData();
+    }
+
+    renderCalendar() {
+        const calendarGrid = document.getElementById('calendar-grid');
+        const monthYear = document.getElementById('calendar-month-year');
+
+        if (!calendarGrid || !monthYear) return;
+
+        const year = this.currentCalendarDate.getFullYear();
+        const month = this.currentCalendarDate.getMonth();
+
+        monthYear.textContent = new Date(year, month).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+        calendarGrid.innerHTML = '';
+
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = date.getDate();
+
+            if (date.getMonth() !== month) {
+                dayElement.classList.add('other-month');
+            }
+
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                dayElement.classList.add('today');
+            }
+
+            // Add mood data if available
+            const dateStr = date.toISOString().split('T')[0];
+            if (this.moodData && this.moodData[dateStr]) {
+                const mood = this.moodData[dateStr];
+                dayElement.classList.add(`mood-${mood.replace('😢', 'very-sad').replace('😟', 'sad').replace('😐', 'neutral').replace('😊', 'happy').replace('😁', 'very-happy').replace(' ', '-')}`);
+                dayElement.setAttribute('data-tooltip', `${mood} on ${date.toLocaleDateString()}`);
+            }
+
+            calendarGrid.appendChild(dayElement);
+        }
+    }
+
+    navigateCalendar(direction) {
+        this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + direction);
+        this.renderCalendar();
+        this.updateCalendarData();
+    }
+
+    async updateCalendarData() {
+        if (!this.currentUser) return;
+
+        try {
+            const response = await fetch(`/api/moods/${this.currentUser.id}`);
+            const moods = await response.json();
+
+            this.moodData = {};
+            moods.forEach(mood => {
+                this.moodData[mood.date] = mood.mood;
+            });
+
+            this.renderCalendar();
+        } catch (error) {
+            console.error('Failed to load calendar data:', error);
+        }
+    }
+
+    async loadDailyQuote() {
+        try {
+            const response = await fetch('https://api.quotable.io/random?tags=inspirational,motivational');
+            const data = await response.json();
+
+            document.getElementById('daily-quote').textContent = `"${data.content}"`;
+            document.getElementById('quote-author').textContent = `- ${data.author}`;
+        } catch (error) {
+            console.error('Failed to load quote:', error);
+            // Fallback quote
+            document.getElementById('daily-quote').textContent = '"The only way to do great work is to love what you do."';
+            document.getElementById('quote-author').textContent = '- Steve Jobs';
+        }
+    }
+
+    loadChallenges() {
+        const challenges = [
+            { id: 'drink-water', text: 'Drink 8 glasses of water', completed: false },
+            { id: 'walk-10min', text: 'Take a 10-minute walk', completed: false },
+            { id: 'gratitude', text: 'Write 3 things you\'re grateful for', completed: false },
+            { id: 'deep-breath', text: 'Practice deep breathing for 2 minutes', completed: false }
+        ];
+
+        const challengesList = document.getElementById('challenges-list');
+        if (!challengesList) return;
+
+        challengesList.innerHTML = challenges.map(challenge => `
+            <div class="challenge-item" data-challenge="${challenge.id}">
+                <div class="challenge-checkbox">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="challenge-content">
+                    <span>${challenge.text}</span>
+                    <small>${this.getChallengeDescription(challenge.id)}</small>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers
+        document.querySelectorAll('.challenge-item').forEach(item => {
+            item.addEventListener('click', () => this.toggleChallenge(item));
+        });
+    }
+
+    getChallengeDescription(id) {
+        const descriptions = {
+            'drink-water': 'Stay hydrated for better mood',
+            'walk-10min': 'Get some fresh air and movement',
+            'gratitude': 'Practice positive thinking',
+            'deep-breath': 'Reduce stress and anxiety'
+        };
+        return descriptions[id] || '';
+    }
+
+    toggleChallenge(item) {
+        item.classList.toggle('completed');
+        const checkbox = item.querySelector('.challenge-checkbox');
+        checkbox.classList.toggle('checked');
+
+        // Add animation
+        item.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            item.style.transform = '';
+        }, 150);
+    }
+
+    initializeBadges() {
+        const badges = [
+            { id: 'first-steps', name: 'First Steps', description: 'Log your first mood entry', unlocked: false },
+            { id: 'week-warrior', name: 'Week Warrior', description: 'Log moods for 7 consecutive days', unlocked: false },
+            { id: 'month-master', name: 'Month Master', description: 'Log moods for 30 consecutive days', unlocked: false },
+            { id: 'century-club', name: 'Century Club', description: 'Log 100 mood entries', unlocked: false }
+        ];
+
+        const badgesContainer = document.getElementById('badges-container');
+        if (!badgesContainer) return;
+
+        badgesContainer.innerHTML = badges.map(badge => `
+            <div class="badge-item ${badge.unlocked ? 'unlocked' : 'locked'}" data-tooltip="${badge.description}">
+                <i class="fas ${this.getBadgeIcon(badge.id)}"></i>
+                <span>${badge.name}</span>
+            </div>
+        `).join('');
+    }
+
+    getBadgeIcon(id) {
+        const icons = {
+            'first-steps': 'fa-star',
+            'week-warrior': 'fa-fire',
+            'month-master': 'fa-crown',
+            'century-club': 'fa-medal'
+        };
+        return icons[id] || 'fa-award';
+    }
+
+    initializeThemeToggle() {
+        const themeToggle = document.getElementById('theme-toggle');
+        if (!themeToggle) return;
+
+        themeToggle.addEventListener('click', () => this.toggleTheme());
+    }
+
+    toggleTheme() {
+        const body = document.body;
+        const themeToggle = document.getElementById('theme-toggle');
+
+        body.classList.toggle('dark-mode');
+        const isDark = body.classList.contains('dark-mode');
+
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+        // Update toggle icon
+        const icon = themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // Add transition effect
+        body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+        setTimeout(() => {
+            body.style.transition = '';
+        }, 300);
+    }
+
+    loadTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                const icon = themeToggle.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-sun';
+                }
+            }
+        }
+    }
+
+    initializeProfileEditing() {
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Calendar navigation
+        const prevMonth = document.getElementById('prev-month');
+        const nextMonth = document.getElementById('next-month');
+        if (prevMonth) prevMonth.addEventListener('click', () => this.navigateCalendar(-1));
+        if (nextMonth) nextMonth.addEventListener('click', () => this.navigateCalendar(1));
+
+        // Quote refresh
+        const refreshQuote = document.getElementById('refresh-quote');
+        if (refreshQuote) refreshQuote.addEventListener('click', () => this.loadDailyQuote());
+
+        // Profile editing
+        const editUsernameBtn = document.getElementById('edit-username-btn');
+        const editBioBtn = document.getElementById('edit-bio-btn');
+        if (editUsernameBtn) editUsernameBtn.addEventListener('click', () => this.toggleEditField('profile-username'));
+        if (editBioBtn) editBioBtn.addEventListener('click', () => this.toggleEditField('profile-bio'));
+
+        // Editable field events
+        const profileUsername = document.getElementById('profile-username');
+        const profileBio = document.getElementById('profile-bio');
+
+        if (profileUsername) {
+            profileUsername.addEventListener('blur', () => this.saveField('username'));
+            profileUsername.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.saveField('username');
+                } else if (e.key === 'Escape') {
+                    this.cancelEdit('profile-username');
+                }
+            });
+        }
+
+        if (profileBio) {
+            profileBio.addEventListener('blur', () => this.saveField('bio'));
+            profileBio.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.saveField('bio');
+                } else if (e.key === 'Escape') {
+                    this.cancelEdit('profile-bio');
+                }
+            });
+        }
+    }
+
+    toggleEditField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        const isEditable = field.getAttribute('contenteditable') === 'true';
+        field.setAttribute('contenteditable', !isEditable);
+
+        if (!isEditable) {
+            field.focus();
+            field.classList.add('editing');
+        } else {
+            field.classList.remove('editing');
+        }
+    }
+
+    saveField(type) {
+        const field = document.getElementById(`profile-${type}`);
+        if (!field) return;
+
+        const newValue = field.textContent.trim();
+        field.setAttribute('contenteditable', 'false');
+        field.classList.remove('editing');
+
+        // Here you could save to backend if needed
+        // For now, just show success feedback
+        this.showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully`, 'success');
+    }
+
+    cancelEdit(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        field.setAttribute('contenteditable', 'false');
+        field.classList.remove('editing');
+        // Reset to original value if needed
+    }
+
+    addMicroAnimations() {
+        // Add hover animations to interactive elements
+        document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item, .calendar-day').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                el.classList.add('animate-pulse');
+            });
+            el.addEventListener('mouseleave', () => {
+                el.classList.remove('animate-pulse');
+            });
+        });
+
+        // Add click animations
+        document.addEventListener('click', (e) => {
+            const target = e.target.closest('button, .mood-option, .challenge-item, .badge-item');
+            if (target) {
+                target.classList.add('animate-bounce');
+                setTimeout(() => {
+                    target.classList.remove('animate-bounce');
+                }, 300);
+            }
+        });
+    }
+
     initMobileMenu() {
         // Create hamburger menu button for mobile
         const topNav = document.querySelector('.top-nav');
@@ -822,4 +1170,229 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         window.moodBuddyApp.checkDailyReminder();
     }, 3600000); // 1 hour in milliseconds
+
+    // Add micro-animations to interactive elements
+    document.addEventListener('DOMContentLoaded', () => {
+        // Add hover animations to buttons
+        document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+            el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+            el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+        });
+
+        // Add click animations
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('button, .mood-option, .challenge-item')) {
+                e.target.classList.add('animate-bounce');
+                setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+            }
+        });
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
+});
+
+// Initialize new features after app is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.moodBuddyApp) {
+            window.moodBuddyApp.initializeNewFeatures();
+        }
+    }, 100);
+});
+
+// Add micro-animations to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    // Add hover animations to buttons
+    document.querySelectorAll('button, .mood-option, .challenge-item, .badge-item').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('animate-pulse'));
+        el.addEventListener('mouseleave', () => el.classList.remove('animate-pulse'));
+    });
+
+    // Add click animations
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('button, .mood-option, .challenge-item')) {
+            e.target.classList.add('animate-bounce');
+            setTimeout(() => e.target.classList.remove('animate-bounce'), 300);
+        }
+    });
 });

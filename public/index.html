@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💙</text></svg>">
 </head>
 <body>
@@ -166,7 +167,11 @@
 
             <!-- Top Navigation Bar -->
             <header class="top-nav">
-                <div class="nav-spacer"></div>
+                <div class="nav-spacer">
+                    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
                 <div class="user-profile" id="user-profile-btn">
                     <div class="user-avatar">
                         <i class="fas fa-user"></i>
@@ -174,6 +179,11 @@
                     <span class="user-name" id="user-display-name">User</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
 
                 <!-- Profile Dropdown -->
                 <div class="profile-dropdown" id="profile-dropdown">
@@ -240,6 +250,125 @@
                                     <span>Your balance</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Mood Calendar Heatmap -->
+                    <div class="calendar-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-calendar-alt"></i>
+                                Mood Calendar
+                            </h3>
+                            <p>Visual overview of your mood patterns</p>
+                        </div>
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <button class="calendar-nav" id="prev-month">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <h4 id="calendar-month-year">October 2024</h4>
+                                <button class="calendar-nav" id="next-month">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="calendar-grid" id="calendar-grid">
+                                <!-- Calendar days will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievements & Badges -->
+                    <div class="achievements-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-trophy"></i>
+                                Achievements
+                            </h3>
+                            <p>Your mood tracking milestones</p>
+                        </div>
+                        <div class="badges-grid" id="badges-container">
+                            <div class="badge-item locked" data-tooltip="Log your first mood entry">
+                                <i class="fas fa-star"></i>
+                                <span>First Steps</span>
+                            </div>
+                            <div class="badge-item locked" data-tooltip="Log moods for 7 consecutive days">
+                                <i class="fas fa-fire"></i>
+                                <span>Week Warrior</span>
+                            </div>
+                            <div class="badge-item locked" data-tooltip="Log moods for 30 consecutive days">
+                                <i class="fas fa-crown"></i>
+                                <span>Month Master</span>
+                            </div>
+                            <div class="badge-item locked" data-tooltip="Log 100 mood entries">
+                                <i class="fas fa-medal"></i>
+                                <span>Century Club</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Wellness Challenges -->
+                    <div class="challenges-section">
+                        <div class="section-header">
+                            <h3>
+                                <i class="fas fa-tasks"></i>
+                                Today's Wellness Tasks
+                            </h3>
+                            <p>Small steps for better mental health</p>
+                        </div>
+                        <div class="challenges-list" id="challenges-list">
+                            <div class="challenge-item" data-challenge="drink-water">
+                                <div class="challenge-checkbox">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <span>Drink 8 glasses of water</span>
+                                    <small>Stay hydrated for better mood</small>
+                                </div>
+                            </div>
+                            <div class="challenge-item" data-challenge="walk-10min">
+                                <div class="challenge-checkbox">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <span>Take a 10-minute walk</span>
+                                    <small>Get some fresh air and movement</small>
+                                </div>
+                            </div>
+                            <div class="challenge-item" data-challenge="gratitude">
+                                <div class="challenge-checkbox">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <span>Write 3 things you're grateful for</span>
+                                    <small>Practice positive thinking</small>
+                                </div>
+                            </div>
+                            <div class="challenge-item" data-challenge="deep-breath">
+                                <div class="challenge-checkbox">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <span>Practice deep breathing for 2 minutes</span>
+                                    <small>Reduce stress and anxiety</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inspirational Quote -->
+                    <div class="quote-section">
+                        <div class="quote-card">
+                            <div class="quote-icon">
+                                <i class="fas fa-quote-left"></i>
+                            </div>
+                            <div class="quote-content">
+                                <p id="daily-quote">"The only way to do great work is to love what you do."</p>
+                                <cite id="quote-author">- Steve Jobs</cite>
+                            </div>
+                            <button class="quote-refresh" id="refresh-quote" title="Get new quote">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -431,14 +560,25 @@
                             </div>
 
                             <div class="profile-info">
-                                <div class="info-group">
+                                <div class="info-group editable">
                                     <label>Username</label>
-                                    <div class="info-value" id="profile-username">Loading...</div>
+                                    <div class="info-value editable-field" id="profile-username" contenteditable="false">Loading...</div>
+                                    <button class="edit-btn" id="edit-username-btn">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                 </div>
 
                                 <div class="info-group">
                                     <label>Email</label>
                                     <div class="info-value" id="profile-email">Loading...</div>
+                                </div>
+
+                                <div class="info-group editable">
+                                    <label>Bio</label>
+                                    <div class="info-value editable-field bio-field" id="profile-bio" contenteditable="false" data-placeholder="Tell us about yourself...">Loading...</div>
+                                    <button class="edit-btn" id="edit-bio-btn">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                 </div>
 
                                 <div class="info-group">
