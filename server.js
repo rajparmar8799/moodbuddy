@@ -266,7 +266,9 @@ app.get('/api/dashboard/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (USE_SUPABASE) {
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
       const { data: userMoods, error } = await supabase
         .from('moods')
         .select('*')
