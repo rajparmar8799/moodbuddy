@@ -34,6 +34,9 @@ class MoodBuddyApp {
             });
         });
 
+        // Mobile menu toggle
+        this.initMobileMenu();
+
         // Mood logging
         document.querySelectorAll('.mood-option').forEach(option => {
             option.addEventListener('click', () => this.selectMood(option));
@@ -66,8 +69,8 @@ class MoodBuddyApp {
             }
         });
 
-        // Mobile sidebar toggle (if needed)
-        // Add hamburger menu functionality here if required
+        // Handle window resize for responsive behavior
+        window.addEventListener('resize', () => this.handleResize());
     }
 
     switchAuthTab(tab) {
@@ -144,7 +147,9 @@ class MoodBuddyApp {
     showMainApp() {
         document.getElementById('auth-screen').classList.remove('active');
         document.getElementById('main-screen').classList.add('active');
-        document.querySelector('.sidebar').classList.add('open');
+
+        // Handle mobile/desktop sidebar behavior
+        this.handleResize();
 
         // Update user profile in top nav
         if (this.currentUser) {
@@ -507,6 +512,55 @@ class MoodBuddyApp {
         document.getElementById('auth-screen').classList.add('active');
         document.querySelector('.sidebar').classList.remove('open');
         this.showToast('Logged out successfully', 'success');
+    }
+
+    initMobileMenu() {
+        // Create hamburger menu button for mobile
+        const topNav = document.querySelector('.top-nav');
+        const navSpacer = document.querySelector('.nav-spacer');
+
+        // Create hamburger button
+        const hamburgerBtn = document.createElement('button');
+        hamburgerBtn.id = 'hamburger-btn';
+        hamburgerBtn.className = 'hamburger-btn';
+        hamburgerBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        hamburgerBtn.style.cssText = `
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        `;
+
+        hamburgerBtn.addEventListener('click', () => this.toggleSidebar());
+        navSpacer.appendChild(hamburgerBtn);
+
+        // Handle initial state
+        this.handleResize();
+    }
+
+    toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('open');
+    }
+
+    handleResize() {
+        const sidebar = document.querySelector('.sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+
+        if (window.innerWidth <= 768) {
+            // Mobile: sidebar hidden by default, show hamburger
+            sidebar.classList.remove('open');
+            if (hamburgerBtn) hamburgerBtn.style.display = 'block';
+        } else {
+            // Desktop: sidebar always visible, hide hamburger
+            sidebar.classList.add('open');
+            if (hamburgerBtn) hamburgerBtn.style.display = 'none';
+        }
     }
 
     showToast(message, type = 'info') {

@@ -963,50 +963,243 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+
+    .main-content {
+        padding: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .mood-selector {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
 @media (max-width: 768px) {
     .sidebar {
         width: 100%;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
     }
 
     .main-content {
         padding: 1rem;
+        padding-top: 4rem;
     }
 
     .sidebar.open ~ .main-content {
         margin-left: 0;
     }
 
+    .top-nav {
+        padding: 0 1rem;
+    }
+
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
     }
 
     .mood-selector {
         grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .mood-option {
+        padding: 1rem;
+    }
+
+    .mood-emoji {
+        font-size: 2rem;
     }
 
     .auth-container {
         margin: 1rem;
         padding: 1.5rem;
+        max-width: none;
+    }
+
+    .auth-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .chart-container,
+    .recent-moods {
+        padding: 1.5rem;
+    }
+
+    .chat-container {
+        height: 500px;
+        max-height: 70vh;
     }
 
     .toast-container {
         left: 20px;
         right: 20px;
+        top: 10px;
+    }
+
+    .toast {
+        min-width: auto;
+        font-size: 0.9rem;
+    }
+
+    .profile-card {
+        padding: 1.5rem;
+    }
+
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
     }
 }
 
 @media (max-width: 480px) {
     .mood-selector {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .mood-option {
+        padding: 0.75rem;
+    }
+
+    .mood-emoji {
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .mood-option span {
+        font-size: 0.875rem;
     }
 
     .stat-card {
         padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .stat-content h3 {
+        font-size: 1.25rem;
     }
 
     .chart-container,
     .recent-moods {
         padding: 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .page-header p {
+        font-size: 1rem;
+    }
+
+    .auth-container {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+
+    .auth-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .auth-header i {
+        font-size: 2.5rem;
+    }
+
+    .form-group input,
+    .note-section textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .chat-container {
+        height: 450px;
+        max-height: 60vh;
+    }
+
+    .message {
+        max-width: 90%;
+        gap: 0.5rem;
+    }
+
+    .message-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 0.875rem;
+    }
+
+    .message-content {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .chat-input-wrapper {
+        gap: 0.5rem;
+    }
+
+    #chat-input {
+        padding: 0.625rem 0.875rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .btn-send {
+        width: 40px;
+        height: 40px;
+    }
+
+    .profile-card {
+        padding: 1rem;
+    }
+
+    .profile-avatar-large {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+    }
+
+    .info-group {
+        padding: 0.75rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .info-group label {
+        font-size: 0.75rem;
+    }
+
+    .profile-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .toast {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
     }
 }
 
@@ -1023,6 +1216,23 @@ body {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Hamburger Menu */
+.hamburger-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.hamburger-btn:hover {
+    background: var(--bg-secondary);
 }
 
 /* Utility Classes */
