@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const { createClient } = require('@supabase/supabase-js');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
@@ -344,19 +344,17 @@ app.get('/api/dashboard/:userId', async (req, res) => {
   }
 });
 
-// OpenAI client
-let openai = null;
+// Gemini AI client
+let genAI = null;
 try {
-  if (process.env.OPENAI_API_KEY) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-    console.log('OpenAI client initialized successfully');
+  if (process.env.GEMINI_API_KEY) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    console.log('Gemini AI client initialized successfully');
   } else {
-    console.log('OpenAI API key not found - using fallback responses');
+    console.log('Gemini API key not found');
   }
 } catch (error) {
-  console.error('Failed to initialize OpenAI client:', error.message);
+  console.error('Failed to initialize Gemini AI client:', error.message);
 }
 
 // Pre-defined suggestions database
@@ -485,10 +483,10 @@ app.post('/api/suggestions', async (req, res) => {
 
      console.log('📊 Recent moods:', recentMoods);
 
-     // Try OpenAI first
-     if (openai) {
+     // Use Gemini AI
+     if (genAI) {
        try {
-         console.log('🚀 Trying OpenAI for suggestions...');
+         console.log('🚀 Using Gemini for suggestions...');
 
          // Get more context from user's mood history
          const { data: userMoods, error: moodError } = await supabase
@@ -514,48 +512,39 @@ app.post('/api/suggestions', async (req, res) => {
          const currentMood = recentMoods[recentMoods.length - 1];
          const prompt = `${moodContext}Based on this recent mood: ${currentMood}, provide 3 personalized, actionable suggestions to improve mood. Keep each suggestion under 50 words and make them positive and encouraging. Format as a simple numbered list.`;
 
-         console.log('📤 Sending to OpenAI:', prompt.substring(0, 100) + '...');
+         console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
 
-         const completion = await openai.chat.completions.create({
-           model: 'gpt-3.5-turbo',
-           messages: [{ role: 'user', content: prompt }],
-           max_tokens: 300,
-           temperature: 0.7
+         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+         const result = await model.generateContent({
+           contents: [{ role: 'user', parts: [{ text: prompt }] }]
          });
+         const response = result.response;
+         const text = response.text();
 
-         const response = completion.choices[0].message.content;
-         console.log('✅ OpenAI response received');
+         console.log('✅ Gemini response received');
 
          // Parse suggestions from response
-         const suggestions = response
+         const suggestions = text
            .split('\n')
            .filter(line => line.trim() && (line.match(/^\d+\./) || line.match(/^[•\-*]/)))
            .slice(0, 3)
            .map(s => s.replace(/^\d+\.\s*/, '').replace(/^[•\-*]\s*/, '').trim());
 
          if (suggestions.length > 0) {
-           console.log('✅ Returning OpenAI suggestions:', suggestions);
+           console.log('✅ Returning Gemini suggestions:', suggestions);
            return res.json({ suggestions });
          }
-       } catch (openaiError) {
-         console.log('❌ OpenAI failed, using fallback:', openaiError.message);
-         console.log('❌ OpenAI error details:', openaiError);
+       } catch (geminiError) {
+         console.log('❌ Gemini failed:', geminiError.message);
+         console.log('❌ Gemini error details:', geminiError);
        }
      } else {
-       console.log('❌ OpenAI client not available');
+       console.log('❌ Gemini client not available');
      }
 
-     // Fallback to database suggestions
-     console.log('📚 Using fallback suggestions database');
-     const currentMood = recentMoods[recentMoods.length - 1];
-     const moodSuggestions = suggestionsDatabase[currentMood] || suggestionsDatabase['😐'];
-
-     // Randomly select 3 suggestions
-     const shuffled = [...moodSuggestions].sort(() => 0.5 - Math.random());
-     const selectedSuggestions = shuffled.slice(0, 3);
-
-     console.log(`📚 Returning ${selectedSuggestions.length} fallback suggestions for mood: ${currentMood}`);
-     return res.json({ suggestions: selectedSuggestions });
+     // No fallback - return error if Gemini fails
+     console.log('❌ No AI service available for suggestions');
+     return res.status(500).json({ error: 'AI service unavailable. Please try again later.' });
 
    } catch (error) {
      console.error('❌ Suggestions error:', error.message);
@@ -663,10 +652,10 @@ app.post('/api/chat', async (req, res) => {
 
      console.log('💬 User message:', message.substring(0, 100) + '...');
 
-     // Try OpenAI first
-     if (openai) {
+     // Use Gemini AI
+     if (genAI) {
        try {
-         console.log('🚀 Trying OpenAI for chat...');
+         console.log('🚀 Using Gemini for chat...');
 
          // Get user's recent mood context
          const { data: userMoods, error: moodError } = await supabase
@@ -684,34 +673,28 @@ app.post('/api/chat', async (req, res) => {
 
          const prompt = `${contextInfo}${message} Please respond as a supportive, empathetic AI assistant focused on mental health and emotional well-being. Keep your response under 150 words and be encouraging and understanding.`;
 
-         console.log('📤 Sending to OpenAI:', prompt.substring(0, 100) + '...');
+         console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
 
-         const completion = await openai.chat.completions.create({
-           model: 'gpt-3.5-turbo',
-           messages: [{ role: 'user', content: prompt }],
-           max_tokens: 200,
-           temperature: 0.7
+         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+         const result = await model.generateContent({
+           contents: [{ role: 'user', parts: [{ text: prompt }] }]
          });
+         const response = result.response;
+         const aiResponse = response.text().trim();
 
-         const aiResponse = completion.choices[0].message.content.trim();
-         console.log('✅ OpenAI chat response received:', aiResponse.substring(0, 50) + '...');
+         console.log('✅ Gemini chat response received:', aiResponse.substring(0, 50) + '...');
          return res.json({ response: aiResponse });
-       } catch (openaiError) {
-         console.log('❌ OpenAI chat failed:', openaiError.message);
-         console.log('❌ OpenAI error details:', openaiError);
+       } catch (geminiError) {
+         console.log('❌ Gemini chat failed:', geminiError.message);
+         console.log('❌ Gemini error details:', geminiError);
        }
      } else {
-       console.log('❌ OpenAI client not available');
+       console.log('❌ Gemini client not available');
      }
 
-     // Fallback to predefined responses
-     console.log('📝 Using fallback chat responses');
-     const responseType = analyzeMessage(message);
-     const responses = chatResponses[responseType] || chatResponses['general'];
-     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-
-     console.log(`📝 Chat response for ${responseType}: ${randomResponse.substring(0, 50)}...`);
-     return res.json({ response: randomResponse });
+     // No fallback - return error if Gemini fails
+     console.log('❌ No AI service available for chat');
+     return res.status(500).json({ error: 'AI service unavailable. Please try again later.' });
 
    } catch (error) {
      console.error('❌ Chat error:', error.message);
