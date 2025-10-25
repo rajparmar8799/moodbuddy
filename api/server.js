@@ -446,10 +446,10 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Export for Vercel serverless function
-module.exports = app;
+// Vercel serverless function handler
+export default app;
 
-// For local development only
+// For local development
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Mood Buddy server running on http://localhost:${PORT}`);
