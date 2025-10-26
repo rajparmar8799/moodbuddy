@@ -83,27 +83,7 @@ A modern web application for tracking your daily moods with AI-powered suggestio
    http://localhost:3000
    ```
 
-## Vercel Deployment
 
-1. **Push to GitHub:**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy on Vercel:**
-   - Go to [Vercel](https://vercel.com) and sign in
-   - Click "New Project" and import your GitHub repository
-   - Configure environment variables in Vercel dashboard:
-     - `OPENAI_API_KEY`: Your OpenAI API key
-     - `SUPABASE_URL`: Your Supabase project URL
-     - `SUPABASE_ANON_KEY`: Your Supabase anon key
-     - `NODE_ENV`: production
-
-3. **Deploy:**
-   - Vercel will automatically detect the configuration and deploy
-   - Your app will be live at `https://your-project-name.vercel.app`
 
 ## Project Structure
 
@@ -149,61 +129,3 @@ moodbuddy/
 5. **Chat with AI Assistant**: Talk to your personal mood companion for emotional support
 6. **Daily Reminders**: Get notified to log your mood if you haven't already today
 
-## Technologies Used
-
-- **Backend**: Node.js, Express.js
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: bcrypt for password hashing
-- **Charts**: Chart.js for mood trend visualization
-- **AI**: OpenAI GPT-4o-mini API
-- **Deployment**: Vercel
-- **Styling**: Modern CSS with gradients, shadows, and animations
-
-## Security
-
-- Passwords are hashed using bcrypt
-- Environment variables for all sensitive data
-- CORS configured for production
-- Input validation on both frontend and backend
-- Secure API key handling
-
-## Environment Variables
-
-Required environment variables for both local development and Vercel deployment:
-
-```
-OPENAI_API_KEY=sk-proj-...
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-NODE_ENV=production  # For Vercel
-```
-
-## Troubleshooting
-
-**Deployment fails:**
-- Check that all environment variables are set in Vercel
-- Ensure Supabase tables are created
-- Check Vercel build logs for errors
-
-**AI features not working:**
-- Verify OpenAI API key is valid and has credits
-- Check Vercel function logs for API errors
-- Ensure OpenAI API key has proper permissions
-
-**Database issues:**
-- Verify Supabase URL and keys are correct
-- Check Supabase dashboard for table creation
-- Ensure RLS policies are configured if needed
-
-## License
-
-MIT License - feel free to use and modify as needed.
-
-## Contributing
-
-Feel free to fork and enhance! Please create issues for bugs and feature requests.
-
----
-
-**Live Demo**: [Your Vercel URL will appear here after deployment]
