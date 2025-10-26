@@ -215,6 +215,13 @@ class MoodBuddyApp {
     switchPage(page) {
         console.log(`📄 Switching to page: ${page}`);
 
+        // Validate page parameter
+        if (!page || typeof page !== 'string') {
+            console.error('❌ Invalid page parameter:', page);
+            this.showToast('Invalid page requested', 'error');
+            return;
+        }
+
         // Hide all pages first
         document.querySelectorAll('.page').forEach(p => {
             p.classList.remove('active');
@@ -231,7 +238,9 @@ class MoodBuddyApp {
             targetPage.style.display = 'block';
             console.log(`✅ Page ${page} activated`);
         } else {
-            console.log(`❌ Page ${page} not found`);
+            console.error(`❌ Page ${page} not found`);
+            this.showToast(`Page "${page}" not found`, 'error');
+            return;
         }
 
         // Activate the corresponding nav link
@@ -295,14 +304,19 @@ class MoodBuddyApp {
     }
 
     renderMoodChart(moodTrends) {
-        const ctx = document.getElementById('mood-chart').getContext('2d');
+        const ctx = document.getElementById('mood-chart');
+
+        // Destroy existing chart if it exists
+        if (this.moodChart) {
+            this.moodChart.destroy();
+        }
 
         // Convert mood emojis to numerical values
         const moodValues = { '😢': 1, '😟': 2, '😐': 3, '😊': 4, '😁': 5 };
         const dates = Object.keys(moodTrends).sort();
         const values = dates.map(date => moodValues[moodTrends[date]] || 3);
 
-        new Chart(ctx, {
+        this.moodChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: dates,
@@ -1124,16 +1138,28 @@ class MoodBuddyApp {
 
     async loadDailyQuote() {
         try {
+            console.log('📝 Loading daily quote...');
             const response = await fetch('https://api.quotable.io/random?tags=inspirational,motivational');
+
+            if (!response.ok) {
+                throw new Error(`Quote API failed with status: ${response.status}`);
+            }
+
             const data = await response.json();
 
-            document.getElementById('daily-quote').textContent = `"${data.content}"`;
-            document.getElementById('quote-author').textContent = `- ${data.author}`;
+            if (data && data.content && data.author) {
+                document.getElementById('daily-quote').textContent = `"${data.content}"`;
+                document.getElementById('quote-author').textContent = `- ${data.author}`;
+                console.log('✅ Quote loaded successfully');
+            } else {
+                throw new Error('Invalid quote data received');
+            }
         } catch (error) {
-            console.error('Failed to load quote:', error);
-            // Fallback quote
+            console.error('❌ Failed to load quote:', error.message);
+            // Fallback quote - never crash the app
             document.getElementById('daily-quote').textContent = '"The only way to do great work is to love what you do."';
             document.getElementById('quote-author').textContent = '- Steve Jobs';
+            console.log('✅ Using fallback quote');
         }
     }
 

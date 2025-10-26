@@ -1376,6 +1376,11 @@ body {
     top: 20px;
     right: 20px;
     z-index: 1000;
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
 }
 
 .toast {
