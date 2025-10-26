@@ -251,8 +251,8 @@ class MoodBuddyApp {
             this.viewProfile();
         }
 
-        // Update mobile sidebar state
-        this.updateMobileSidebar();
+        // Close mobile sidebar after navigation
+        this.closeMobileSidebar();
     }
 
     async loadDashboard() {
