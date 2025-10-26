@@ -63,6 +63,14 @@ CREATE TABLE moods (
   date DATE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE TABLE chat_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  sender TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
       `);
     } else {
       console.log('✅ Users table exists');
@@ -78,6 +86,18 @@ CREATE TABLE moods (
       console.log('❌ Moods table does not exist. Please create it manually in Supabase dashboard');
     } else {
       console.log('✅ Moods table exists');
+    }
+
+    // Check chat_history table
+    const { error: chatError } = await supabase
+      .from('chat_history')
+      .select('id')
+      .limit(1);
+
+    if (chatError && chatError.code === 'PGRST116') {
+      console.log('❌ Chat history table does not exist. Please create it manually in Supabase dashboard');
+    } else {
+      console.log('✅ Chat history table exists');
     }
 
   } catch (error) {
@@ -639,6 +659,9 @@ function analyzeMessage(message) {
   }
 }
 
+// Store conversation history per user
+const conversationHistories = new Map();
+
 // AI Chat/Assistant endpoint
 app.post('/api/chat', async (req, res) => {
    try {
@@ -652,37 +675,81 @@ app.post('/api/chat', async (req, res) => {
 
      console.log('💬 User message:', message.substring(0, 100) + '...');
 
+     // Get or create conversation history for this user
+     if (!conversationHistories.has(userId)) {
+       conversationHistories.set(userId, [
+         {
+           role: "user",
+           content: "You are MoodBuddy, a friendly and emotionally intelligent AI companion. Always reply politely, in 3–4 lines, empathetic and comforting. Maintain conversation context and remember what the user has shared."
+         }
+       ]);
+     }
+
+     const conversationHistory = conversationHistories.get(userId);
+
+     // Add user message to history
+     conversationHistory.push({ role: "user", content: message });
+
+     // Keep only last 15 messages to avoid token limits
+     if (conversationHistory.length > 16) { // 1 system + 15 conversation pairs
+       conversationHistory.splice(1, 2); // Remove oldest user-assistant pair
+     }
+
+     // Save user message to database
+     try {
+       await supabase
+         .from('chat_history')
+         .insert({
+           user_id: userId,
+           sender: 'user',
+           message: message,
+           timestamp: new Date().toISOString()
+         });
+       console.log('💾 User message saved to database');
+     } catch (dbError) {
+       console.log('⚠️ Failed to save user message to database:', dbError.message);
+     }
+
      // Use Gemini AI
      if (genAI) {
        try {
-         console.log('🚀 Using Gemini for chat...');
-
-         // Get user's recent mood context
-         const { data: userMoods, error: moodError } = await supabase
-           .from('moods')
-           .select('*')
-           .eq('user_id', userId)
-           .order('created_at', { ascending: false })
-           .limit(5);
-
-         let contextInfo = '';
-         if (!moodError && userMoods && userMoods.length > 0) {
-           const recentMoods = userMoods.slice(0, 3).map(m => m.mood).join(', ');
-           contextInfo = `The user has recently logged these moods: ${recentMoods}. `;
-         }
-
-         const prompt = `${contextInfo}Hey friend! ${message} Respond like a caring, understanding friend would - keep it real, supportive, and conversational. Keep your response to 2-3 lines only, unless you really need to express something important. Be genuine and warm.`;
-
-         console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
+         console.log('🚀 Using Gemini for chat with conversation history...');
 
          const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+         // Convert conversation history to Gemini format
+         const contents = conversationHistory.map(msg => ({
+           role: msg.role === 'user' ? 'user' : 'model',
+           parts: [{ text: msg.content }]
+         }));
+
          const result = await model.generateContent({
-           contents: [{ role: 'user', parts: [{ text: prompt }] }]
+           contents: contents
          });
+
          const response = result.response;
          const aiResponse = response.text().trim();
 
          console.log('✅ Gemini chat response received:', aiResponse.substring(0, 50) + '...');
+
+         // Add assistant response to history
+         conversationHistory.push({ role: "model", content: aiResponse });
+
+         // Save assistant response to database
+         try {
+           await supabase
+             .from('chat_history')
+             .insert({
+               user_id: userId,
+               sender: 'assistant',
+               message: aiResponse,
+               timestamp: new Date().toISOString()
+             });
+           console.log('💾 Assistant response saved to database');
+         } catch (dbError) {
+           console.log('⚠️ Failed to save assistant response to database:', dbError.message);
+         }
+
          return res.json({ response: aiResponse });
        } catch (geminiError) {
          console.log('❌ Gemini chat failed:', geminiError.message);
@@ -692,15 +759,69 @@ app.post('/api/chat', async (req, res) => {
        console.log('❌ Gemini client not available');
      }
 
-     // No fallback - return error if Gemini fails
-     console.log('❌ No AI service available for chat');
-     return res.status(500).json({ error: 'AI service unavailable. Please try again later.' });
+     // Fallback response if AI fails
+     const fallbackResponse = "I'm here to listen. What's been on your mind?";
+     conversationHistory.push({ role: "model", content: fallbackResponse });
+
+     // Save fallback response to database
+     try {
+       await supabase
+         .from('chat_history')
+         .insert({
+           user_id: userId,
+           sender: 'assistant',
+           message: fallbackResponse,
+           timestamp: new Date().toISOString()
+         });
+     } catch (dbError) {
+       console.log('⚠️ Failed to save fallback response to database:', dbError.message);
+     }
+
+     return res.json({ response: fallbackResponse });
 
    } catch (error) {
      console.error('❌ Chat error:', error.message);
      console.error('❌ Chat error stack:', error.stack);
      return res.status(500).json({ error: 'I\'m experiencing some technical difficulties, but I\'m still here for you. Please try again in a moment.' });
    }
+});
+
+// Get chat history endpoint
+app.get('/api/chat/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    console.log('📚 Fetching chat history for user:', userId);
+
+    const { data: chatHistory, error } = await supabase
+      .from('chat_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error('❌ Database error fetching chat history:', error);
+      return res.status(500).json({ error: 'Failed to fetch chat history' });
+    }
+
+    console.log('✅ Chat history fetched:', chatHistory?.length || 0, 'messages');
+
+    // Convert to frontend format
+    const formattedHistory = chatHistory.map(msg => ({
+      sender: msg.sender,
+      message: msg.message,
+      timestamp: msg.timestamp
+    }));
+
+    res.json({ history: formattedHistory });
+  } catch (error) {
+    console.error('❌ Chat history error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch chat history' });
+  }
 });
 
 // Vercel serverless function handler

@@ -247,6 +247,8 @@ class MoodBuddyApp {
             this.loadDashboard();
         } else if (page === 'suggestions') {
             this.getSuggestions();
+        } else if (page === 'assistant') {
+            this.loadChatHistory();
         } else if (page === 'profile') {
             this.viewProfile();
         }
@@ -521,7 +523,7 @@ class MoodBuddyApp {
 
         console.log('💬 User message:', message);
 
-        // Add user message to chat
+        // Add user message to chat with timestamp
         this.addMessageToChat(message, 'user');
 
         // Clear input
@@ -554,7 +556,7 @@ class MoodBuddyApp {
 
             if (response.ok) {
                 console.log('✅ Chat response received');
-                // Add assistant response to chat
+                // Add assistant response to chat with timestamp
                 this.addMessageToChat(data.response, 'assistant');
             } else {
                 console.log('❌ Chat API failed:', data.error);
@@ -578,12 +580,17 @@ class MoodBuddyApp {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}-message`;
 
+        // Format timestamp
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
         messageDiv.innerHTML = `
             <div class="message-avatar">
                 ${type === 'assistant' ? '<i class="fas fa-heart"></i>' : '<i class="fas fa-user"></i>'}
             </div>
             <div class="message-content">
                 <p>${this.escapeHtml(message)}</p>
+                <span class="message-time">${timeString}</span>
             </div>
         `;
 
@@ -632,6 +639,96 @@ class MoodBuddyApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    async loadChatHistory() {
+        console.log('📚 Loading chat history for user:', this.currentUser?.id);
+
+        if (!this.currentUser) {
+            console.log('❌ No current user for chat history');
+            return;
+        }
+
+        try {
+            console.log('📡 Fetching chat history...');
+            const response = await fetch(`/api/chat/${this.currentUser.id}`);
+            console.log('📡 Chat history response status:', response.status);
+
+            const data = await response.json();
+            console.log('📡 Chat history data:', data);
+
+            if (response.ok && data.history) {
+                console.log('✅ Chat history loaded successfully');
+                this.renderChatHistory(data.history);
+            } else {
+                console.log('❌ Chat history load failed:', data.error);
+                // Show welcome message if no history
+                this.showWelcomeMessage();
+            }
+        } catch (error) {
+            console.error('❌ Chat history load error:', error);
+            this.showWelcomeMessage();
+        }
+    }
+
+    renderChatHistory(history) {
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Clear existing messages except welcome message
+        const existingMessages = chatMessages.querySelectorAll('.message');
+        existingMessages.forEach(msg => {
+            if (!msg.classList.contains('welcome-message')) {
+                msg.remove();
+            }
+        });
+
+        // Add historical messages
+        history.forEach(chatMsg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${chatMsg.sender}-message`;
+
+            // Format timestamp
+            const msgTime = new Date(chatMsg.timestamp);
+            const timeString = msgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    ${chatMsg.sender === 'assistant' ? '<i class="fas fa-heart"></i>' : '<i class="fas fa-user"></i>'}
+                </div>
+                <div class="message-content">
+                    <p>${this.escapeHtml(chatMsg.message)}</p>
+                    <span class="message-time">${timeString}</span>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+        });
+
+        this.scrollChatToBottom();
+    }
+
+    showWelcomeMessage() {
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Clear any existing messages
+        chatMessages.innerHTML = '';
+
+        // Add welcome message
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'message assistant-message welcome-message';
+
+        welcomeDiv.innerHTML = `
+            <div class="message-avatar">
+                <i class="fas fa-heart"></i>
+            </div>
+            <div class="message-content">
+                <p>Hello! I'm your Mood Buddy assistant. I'm here to listen to whatever is on your mind. Feel free to share your thoughts, feelings, or anything you'd like to talk about. I'm here to support you with kindness and understanding.</p>
+                <span class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+        `;
+
+        chatMessages.appendChild(welcomeDiv);
+        this.scrollChatToBottom();
     }
 
     toggleProfileDropdown() {
