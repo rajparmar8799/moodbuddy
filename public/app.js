@@ -252,7 +252,9 @@ class MoodBuddyApp {
         }
 
         // Close mobile sidebar after navigation
-        this.closeMobileSidebar();
+        if (this.closeMobileSidebar) {
+            this.closeMobileSidebar();
+        }
     }
 
     async loadDashboard() {
