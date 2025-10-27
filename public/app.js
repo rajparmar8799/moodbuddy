@@ -31,15 +31,20 @@ class MoodBuddyApp {
 
         // Navigation
         document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (e.target.id === 'logout-btn') {
-                    this.logout();
-                } else {
-                    this.switchPage(e.target.dataset.page);
-                }
-            });
-        });
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetLink = e.target.closest('.nav-link'); // ensures we get the <a> element
+        const page = targetLink.dataset.page;
+
+        if (targetLink.id === 'logout-btn' || targetLink.id === 'dropdown-logout-btn') {
+            this.logout();
+        } else if (page) {
+            this.switchPage(page);
+        } else {
+            console.warn('❌ Invalid page parameter:', page);
+        }
+    });
+});
 
         // Mobile menu toggle
         this.initMobileMenu();
