@@ -534,7 +534,7 @@ app.post('/api/suggestions', async (req, res) => {
 
          console.log('📤 Sending to Gemini:', prompt.substring(0, 100) + '...');
 
-         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
          const result = await model.generateContent({
            contents: [{ role: 'user', parts: [{ text: prompt }] }]
          });
