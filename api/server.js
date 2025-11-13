@@ -715,7 +715,7 @@ app.post('/api/chat', async (req, res) => {
        try {
          console.log('🚀 Using Gemini for chat with conversation history...');
 
-         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
          // Convert conversation history to Gemini format
          const contents = conversationHistory.map(msg => ({
